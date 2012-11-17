@@ -52,27 +52,27 @@ module Babelphish
     ### Write methods ###
     def write_int8(v, out)
       v = v.to_i
-      raise "To large int8 number: #{v}, for struct '#{self.class.name}'" if v > 0xFF  # Max 255
+      raise_error "Too large int8 number: #{v}" if v > 0xFF  # Max 255
       out << v
     end
 
     def write_int16(v, out)
       v = v.to_i
-      raise "To large int16 number: #{v}, for struct '#{self.class.name}'" if v > 0xFFFF # Max 65.535 
+      raise_error "Too large int16 number: #{v}" if v > 0xFFFF # Max 65.535 
       write_int8( v >> 8 & 0xFF, out)
       write_int8( v & 0xFF, out)
     end
 
     def write_int24(v, out)
       v = v.to_i
-      raise "To large int24 number: #{v}, for struct '#{self.class.name}'" if v > 0xFFFFFF # Max 16.777.215
+      raise_error "Too large int24 number: #{v}" if v > 0xFFFFFF # Max 16.777.215
       write_int8( v >> 16 & 0xFF, out)
       write_int16( v & 0xFFFF, out)
     end
 
     def write_int32(v, out)
       v = v.to_i
-      raise "To large int32 number: #{v}, for struct '#{self.class.name}'" if v > 0xFFFFFFFF # Max 4.294.967.295
+      raise_error "Too large int32 number: #{v}" if v > 0xFFFFFFFF # Max 4.294.967.295
       write_int8( v >> 24 & 0xFF, out)
       write_int24( v & 0xFFFFFF, out)
     end
@@ -83,48 +83,48 @@ module Babelphish
 
     def write_string(v, out)
       s = force_to_utf8_string(v)
-      raise "To long string: #{s.bytesize} bytes for struct '#{self.class.name}'" if s.bytesize > 0xFFFF
+      raise_error "Too large string: #{s.bytesize} bytes" if s.bytesize > 0xFFFF
       write_int16(s.bytesize, out)
       out << s.bytes.to_a
     end
 
     def write_binary(v, out)
       if v.is_a?(Array)
-        raise "To large binary: #{v.size} (#{v.class.name}) for struct '#{self.class.name}'" unless v.size < 0xFFFFFFFF 
+        raise_error "Too large binary: #{v.size} (#{v.class.name})" unless v.size < 0xFFFFFFFF 
         write_int32(v.size, out)
         v.each do |x|
           write_int8(x, out)
         end
       elsif v.is_a?(String)
-        raise "To large binary: #{v.size} (#{v.class.name}) for struct '#{self.class.name}'" unless v.size < 0xFFFFFFFF 
+        raise_error "Too large binary: #{v.size} (#{v.class.name})" unless v.size < 0xFFFFFFFF 
         write_int32(v.size, out)
         out << v.bytes.to_a
       else 
-        raise "Unsupported binary 'nil' for struct '#{self.class.name}'" if v == nil
-        raise "Unsupported binary of type '#{v.class.name}' for struct '#{self.class.name}'"
+        raise_error "Unsupported binary 'nil'" if v == nil
+        raise_error "Unsupported binary of type '#{v.class.name}'"
       end
     end
 
     def write_short_binary(v, out)
       if v.is_a?(Array)
-        raise "To large short_binary: #{v.size} (#{v.class.name}) for struct '#{self.class.name}'" unless v.size < 0xFF
+        raise_error "Too large short_binary: #{v.size} (#{v.class.name})" unless v.size < 0xFF
         write_int8(v.size, out)
         v.each do |x|
           write_int8(x, out)
         end
       elsif v.is_a?(String)
-        raise "To large short_binary: #{v.size} (#{v.class.name}) for struct '#{self.class.name}'" unless v.size < 0xFF
+        raise_error "To large short_binary: #{v.size} (#{v.class.name})" unless v.size < 0xFF
         write_int8(v.size, out)
         out << v.bytes.to_a
       else 
-        raise "Unsupported binary 'nil' for struct '#{self.class.name}'" if v == nil
-        raise "Unsupported binary of type '#{v.class.name}' for struct '#{self.class.name}'"
+        raise_error "Unsupported binary 'nil'" if v == nil
+        raise_error "Unsupported binary of type '#{v.class.name}'"
       end
     end
 
     def write_ipnumber(v, out)
       if v.is_a?(Array)
-        raise "Unknown IP v4 number #{v} for struct '#{self.class.name}'" unless v.size == 4 # Only IPv4 for now 
+        raise_error "Unknown IP v4 number #{v}" unless v.size == 4 # Only IPv4 for now 
         write_short_binary(v, out)
       elsif v.is_a?(String)
         ss = v.split(/\./).map do |s|
@@ -132,11 +132,15 @@ module Babelphish
         end
         write_ipnumber(ss, out)
       else
-        raise "Unknown IP number '#{v}' for struct '#{self.class.name}'"
+        raise_error "Unknown IP number '#{v}'"
       end
     end
 
     private
+    def raise_error(msg)
+      raise "[#{self.class.name}] #{msg}" 
+    end
+    
     def force_to_utf8_string(string)
       if string.encoding != Encoding::UTF_8
         string = string.encode(Encoding::UTF_8)
@@ -335,8 +339,8 @@ module Babelphish
   
     def generate_code(structs, opts)
       pp opts
-      base_template = Erubis::Eruby.new(ruby_base_class_template_str.strip)
-      class_template = Erubis::Eruby.new(ruby_class_template_str.strip)
+      base_template = Erubis::Eruby.new(ruby_base_class_template_str)
+      class_template = Erubis::Eruby.new(ruby_class_template_str)
       keys = structs.keys.sort
       src = keys.map do |k|
         ss = structs[k]
