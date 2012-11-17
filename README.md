@@ -33,7 +33,7 @@ struct(:TestComplex) {
 }
 
 Babelphish::CodeGenerator.new.generate(:ruby, file: 'test_babel.rb', module: 'BabelTest', parent_class: "Object")
-```ruby
+```
 
 The resulting _test_babel.rb_ contains the generated source code for the defined structs. Below is an example on how to use the generated code
 
