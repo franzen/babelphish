@@ -147,11 +147,4 @@ module Babelphish
       end
     end
   end
-
-  def struct(name, version=1, &block)
-    puts "struct #{name}"
-    builder = StructBuilder.new(name, version)
-    Docile.dsl_eval(builder, &block)
-    builder
-  end
 end
