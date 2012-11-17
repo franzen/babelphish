@@ -124,7 +124,7 @@ module Babelphish
 
     def write_ipnumber(v, out)
       if v.is_a?(Array)
-        raise_error "Unknown IP v4 number #{v}" unless v.size == 4 # Only IPv4 for now 
+        raise_error "Unknown IP v4 number #{v}" unless v.size == 0 || v.size == 4 # Only IPv4 for now 
         write_short_binary(v, out)
       elsif v.is_a?(String)
         ss = v.split(/\./).map do |s|
@@ -159,7 +159,7 @@ module Babelphish
 
       def initialize()
           super
-  <% c.complex_fields.each do |f| %>
+  <% c.fields.each do |f| %>
           @<%= f.name %> ||= <%= this.ruby_get_empty_declaration(f) %>
   <% end %>
       end
@@ -190,10 +190,14 @@ module Babelphish
 
     def ruby_get_empty_declaration(field)
       case field.type
-      when :list
+      when :list, :binary, :short_binary
         "[]"
       when :map
         "{}"
+      when :int8, :int16, :int32
+        "0"
+      when :string, :ipnumber
+        "\"\""
       else
         raise "Unkown field type #{field.type}"
       end
