@@ -1,6 +1,6 @@
 module Babelphish
 
-  class RubyHelperMethods
+  class RubyHelperMethods < BabelHelperMethods
     def ruby_base_class_template_str
       %q{
   class BabelBase<%= toplevel_class %>
