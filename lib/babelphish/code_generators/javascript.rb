@@ -36,7 +36,7 @@ function BabelDataReader(data) {
     this.data = data;
     this.index = 0;
 }
-BabelDataReader.prototype.getbyte function() {
+BabelDataReader.prototype.getbyte = function() {
     return this.data[this.index++];
 };
 BabelDataReader.prototype.read = function(items) {
@@ -111,7 +111,7 @@ EOS
     def javascript_class_template_str
       <<EOS2
 function <%= c.name %>() {
-   BabelHelper.class(this);  
+   BabelHelper.call(this);  
 <% c.fields.each do |f| %>
    this.<%= f.name %> = <%= this.javascript_get_empty_declaration(f) %>;
 <% end %>
