@@ -203,34 +203,13 @@ module Babelphish
       end
     end
 
-    def get_fresh_variable_name
-      @vindex = (@vindex || 0xFF) + 1
-      return "var_#{@vindex.to_s(16)}"
-    end
-
-    def ruby_format_as_src(first_indent, following_indent, is)
-      indent = "#{" " * first_indent}"
-      is.flatten.map do |i|
-        case i
-        when :indent
-          indent << " " * following_indent
-          nil
-        when :deindent
-          indent = indent[0..-(following_indent+1)]
-          nil
-        else
-          "#{indent}#{i}"
-        end
-      end.compact.join("\n")
-    end
-
     def ruby_serialize_complex(field)
       types = field.referenced_types
       as = [
             "# Serialize #{field.type} '#{field.name}'",
             ruby_serialize_internal(field.name, types)
            ]
-      ruby_format_as_src(6, 3, as)
+      format_src(6, 3, as)
     end
 
     def ruby_serialize_internal(var, types)
@@ -280,7 +259,7 @@ module Babelphish
             "# Deserialize #{field.type} '#{field.name}'",
             ruby_deserialize_internal("@#{field.name}", types)
            ]
-      ruby_format_as_src(6, 3, as)
+      format_src(6, 3, as)
     end
 
     def ruby_deserialize_internal(var, types)
