@@ -135,21 +135,6 @@ BabelHelper.prototype.read_string = function(data) {
     return decode_to_utf8(data.read(this.read_int16(data)))
 };
 
-BabelHelper.prototype.read_ip = function() {
-    var b, ip, ip_array, _i, _len;
-    ip_array = this.data.subarray(this.index, this.index + 4);
-    this.index += 4;
-    ip = "";
-    for (_i = 0, _len = ip_array.length; _i < _len; _i++) {
-        b = ip_array[_i];
-        if (ip.length > 0) {
-            ip += ".";
-        }
-        ip += b.toString();
-    }
-    return ip;
-};
-
 BabelHelper.prototype.write_int8 = function(v, out) {
    if(v > 0xFF) // Max 255
       this.raise_error("Too large int8 number: " + v); 
@@ -194,17 +179,61 @@ BabelHelper.prototype.write_string = function(v, out) {
    out.write(s);
 }
 
+BabelHelper.prototype.write_binary = function(v, out) {
+    if((v instanceof Array) || (v instanceof Uint8Array)) {
+      if(v.length > 0xFFFFFFFF)
+        this.raise_error("Too large binary: " + v.length + " (" + v.constructor.name + ")");
+      this.write_int32(v.length, out)
+      out.write(v);
+    } else if(v.constructor == String) {
+        if(v.length > 0xFFFFFFFF)
+          this.raise_error("Too large binary: " + v.length + " (" + v.constructor.name + ")");
+        this.write_int32(v.length, out)
+        out.write(v);
+    } else if(v==null) { 
+      this.raise_error("Unsupported binary 'null'");
+    } else {
+      this.raise_error("Unsupported binary of type '" + v.constructor.name + "'");
+    }
+}
 
+BabelHelper.prototype.write_short_binary = function(v, out) {
+    if((v instanceof Array) || (v instanceof Uint8Array)) {
+      if(v.length > 0xFF)
+        this.raise_error("Too large binary: " + v.length + " (" + v.constructor.name + ")");
+      this.write_int8(v.length, out)
+      out.write(v);
+    } else if(v.constructor == String) {
+        if(v.length > 0xFF)
+          this.raise_error("Too large binary: " + v.length + " (" + v.constructor.name + ")");
+        this.write_int8(v.length, out)
+        out.write(v);
+    } else if(v==null) { 
+      this.raise_error("Unsupported binary 'null'");
+    } else {
+      this.raise_error("Unsupported binary of type '" + v.constructor.name + "'");
+    }
+}
 
+BabelHelper.prototype.write_ipnumber = function(v, out) {
+   if((v instanceof Array) || (v instanceof Uint8Array)) {
+      if(v.length != 4 && v.length != 0)
+         this.raise_error("Unknown IP v4 number " + v);
+      this.write_short_binary(v, out)
+   } else if(v.constructor == String) {
+      var ss = [];
+      if(v.length > 0) {
+         ss = v.split(".").map(Number);
+      }
+      this.write_ipnumber(ss, out);
+   } else {
+      this.raise_error("Unknown IP number '" + v + "'");
+   }
+}
 
-
-
-
-
-
-
-
-
+BabelHelper.prototype.raise_error = function(msg) {
+  throw "[" + this.constructor.name + "] " + msg; 
+}
 EOS
     end
 
