@@ -1,3 +1,9 @@
+# Some notes on Javascript and numbers:
+# . The bitwise operators and shift operators operate on 32-bit ints.
+# . Note that all the positive and negative integers whose magnitude is no greater than 253 are representable in the Number type (indeed, the integer 0 has two representations, +0 and −0).
+# . They are 64-bit floating point values, the largest exact integral value is 2^53, or 9007199254740992 (-9007199254740992 to 9007199254740992)
+
+
 require 'pp'
 
 module Babelphish
@@ -75,7 +81,8 @@ BabelHelper.prototype.read_int24 = function (data) {
 };
 
 BabelHelper.prototype.read_int32 = function (data) {
-    return (data.getbyte() << 24) | this.read_int24(data);
+    // return (data.getbyte() << 24) | this.read_int24(data); // See notes about numbers above
+    return (data.getbyte() * (256*256*256)) + this.read_int24(data);
 };
 
 BabelHelper.prototype.read_binary = function (data) {
