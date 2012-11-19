@@ -32,20 +32,64 @@ function decode_to_utf8(utftext) {
     return string;
 }
 
+
+// ------------------------------------------------------------ BabelDataReader
 function BabelDataReader(data) {
     this.data = data;
     this.index = 0;
 }
+
 BabelDataReader.prototype.getbyte = function() {
     return this.data[this.index++];
 };
+
 BabelDataReader.prototype.read = function(items) {
     var from = this.index;
     this.index += items
     return this.data.subarray(from, this.index)
 };
 
+
+// ------------------------------------------------------------ BabelDataWriter
+function BabelDataWriter(data) {
+   this.data = data;
+   this.index = 0;
+   this.data = new Uint8Array(4096);
+}
+
+BabelDataWriter.prototype._realloc = function(size) {
+   size = size || 4096;
+   var old_data = this.data;
+   this.data = new Uint8Array(Math.max(size, 4096) + this.data.length);
+   this.data.set(old_data, 0);
+};
+
+BabelDataWriter.prototype.writeByte = function(a_byte) {
+   if(this.index + 1 >= this.data.length)
+      this._realloc();
+   this.data[this.index++] = a_byte;
+};
+
+BabelDataWriter.prototype.write = function(bytes) {
+   if(this.index + bytes.length >= this.data.length)
+      this._realloc(bytes.length);
+   this.data.set(bytes, this.index);
+   this.index += bytes.length;
+};
+
+BabelDataWriter.prototype.get_data = function() {
+    return this.data.subarray(0, this.index);
+};
+
+
+// ------------------------------------------------------------ BabelHelper
 function BabelHelper() {}
+
+BabelHelper.prototype.serialize = function() {
+  var out = new BabelDataWriter();
+  this.serialize_internal(out);
+  return out.get_data();
+}
 
 BabelHelper.prototype.read_int8 = function(data) {
     return data.getbyte();
@@ -105,11 +149,68 @@ BabelHelper.prototype.read_ip = function() {
     }
     return ip;
 };
+
+BabelHelper.prototype.write_int8 = function(v, out) {
+   if(v > 0xFF) // Max 255
+      this.raise_error("Too large int8 number: " + v); 
+   out.writeByte(v);
+}
+
+BabelHelper.prototype.write_int16 = function(v, out) {
+   if(v > 0xFFFF) // Max 65.535
+      this.raise_error("Too large int16 number: " + v); 
+   this.write_int8( v >> 8 & 0xFF, out);
+   this.write_int8( v & 0xFF, out);
+}
+
+BabelHelper.prototype.write_int24 = function(v, out) {
+   if(v > 0xFFFFFF) // Max 16.777.215
+      this.raise_error("Too large int24 number: " + v); 
+   this.write_int8( v >> 16 & 0xFF, out);
+   this.write_int16( v & 0xFFFF, out);
+}
+
+BabelHelper.prototype.write_int32 = function(v, out) {
+   if(v > 0xFFFFFFFF) // Max 4.294.967.295
+      this.raise_error("Too large int32 number: " + v); 
+   this.write_int8( v >> 16 & 0xFF, out);
+   this.write_int16( v & 0xFFFF, out);
+}
+
+BabelHelper.prototype.write_bool = function(v, out) {
+   this.write_int8(v ? 1 : 0, out)
+}
+
+BabelHelper.prototype.write_bool = function(v, out) {
+   this.write_int8(v ? 1 : 0, out)
+}
+
+BabelHelper.prototype.write_string = function(v, out) {
+   var s = v; //force_to_utf8_string(v)
+   if(s.length > 0xFFFF)
+    this.raise_error("Too large string: " + s.length + " bytes");
+
+   this.write_int16(s.length, out);
+   out.write(s);
+}
+
+
+
+
+
+
+
+
+
+
+
+
 EOS
     end
 
     def javascript_class_template_str
       <<EOS2
+// ------------------------------------------------------------ <%= c.name %>
 function <%= c.name %>() {
    BabelHelper.call(this);  
 <% c.fields.each do |f| %>
@@ -117,12 +218,28 @@ function <%= c.name %>() {
 <% end %>
 }
 
+// Inherit BabelHelper
+<%= c.name %>.prototype = new BabelHelper();
+ 
+// Correct the constructor pointer because it points to BabelHelper
+<%= c.name %>.prototype.constructor = <%= c.name %>;
+
+// Define the methods of <%= c.name %>
 <%= c.name %>.prototype.deserialize = function(data) {
 <% c.simple_fields.each do |f| %>
    this.<%= f.name %> = read_<%= f.type %>(data);
 <% end %>
 <% c.complex_fields.each do |f| %>
 <%= this.javascript_deserialize_complex f %>
+<% end %>
+}
+
+<%= c.name %>.prototype.serialize_internal = function(out) {
+<% c.simple_fields.each do |f| %>
+   this.write_<%= f.type %>(this.<%= f.name %>, out);
+<% end %>
+<% c.complex_fields.each do |f| %>
+<%= this.javascript_serialize_complex f %>
 <% end %>
 }
 EOS2
@@ -157,35 +274,39 @@ EOS2
         case types.first
         when :list
           nv = get_fresh_variable_name
+          idx = get_fresh_variable_name
           return [
-                  "write_int32(#{var}.size, out)",
-                  "#{var}.each do |#{nv}|",
+                  "this.write_int32(#{var}.size, out);",
+                  "for(var #{idx}=0; #{idx}<#{var.size}; #{idx}++) {",
                   :indent,
+                  "var #{nv} = #{var}[#{idx}];",
                   javascript_serialize_internal(nv, types[1]),
                   :deindent,
-                  "end"
+                  "}"
                  ]
         when :map
           nv1 = get_fresh_variable_name      
           nv2 = get_fresh_variable_name
+          key = get_fresh_variable_name
           return [
-                  "write_int32(#{var}.size, out)",
-                  "#{var}.each_pair do |#{nv1}, #{nv2}|",
+                  "this.write_int32(#{var}.size, out);",
+                  "for(var #{nv1} in #{var}) {",
                   :indent,
+                  "var #{nv2} = this.#{var}[#{nv1}];",
                   javascript_serialize_internal(nv1, types[1]),
                   javascript_serialize_internal(nv2, types[2]),
                   :deindent,
-                  "end"
+                  "}"
                  ]
         else
           raise "Missing serialization for #{var}"
         end
       else
         if $all_structs[types]
-          "#{var}.serialize_internal(out)"
+          "this.#{var}.serialize_internal(out)"
       
         elsif $available_types[types] && $available_types[types].ancestors.include?(SimpleDefinition)
-          "write_#{types}(#{var}, out)"
+          "this.write_#{types}(#{var}, out)"
       
         else
           raise "Missing code generation case #{types}"
