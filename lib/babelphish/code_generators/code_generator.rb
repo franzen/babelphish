@@ -4,7 +4,7 @@ module Babelphish
   class BabelHelperMethods
     def format_src(first_indent, following_indent, is)
       indent = "#{" " * first_indent}"
-      is.flatten.map do |i|
+      is.flatten.compact.map do |i|
         case i
         when :indent
           indent << " " * following_indent

@@ -1,7 +1,8 @@
 require 'pp'
 
 module Babelphish
-
+  $debug_javascript = false
+  
   class JavascriptHelperMethods < BabelHelperMethods
     def javascript_base_class_template_str
       <<EOS
@@ -350,7 +351,8 @@ EOS2
       types = field.referenced_types
       as = [
             "// Serialize #{field.type} '#{field.name}'",
-            javascript_serialize_internal(field.name, types)
+            $debug_javascript ? "console.log(\"Serialize '#{field.name}'\");" : nil,
+            javascript_serialize_internal("this.#{field.name}", types)
            ]
       format_src(4, 4, as)
     end
@@ -362,8 +364,8 @@ EOS2
           nv = get_fresh_variable_name
           idx = get_fresh_variable_name
           return [
-                  "this.write_int32(#{var}.size, out);",
-                  "for(var #{idx}=0; #{idx}<#{var.size}; #{idx}++) {",
+                  "this.write_int32(#{var}.length, out);",
+                  "for(var #{idx}=0; #{idx}<#{var}.length; #{idx}++) {",
                   :indent,
                   "var #{nv} = #{var}[#{idx}];",
                   javascript_serialize_internal(nv, types[1]),
@@ -371,14 +373,16 @@ EOS2
                   "}"
                  ]
         when :map
+          len = get_fresh_variable_name
           nv1 = get_fresh_variable_name      
           nv2 = get_fresh_variable_name
           key = get_fresh_variable_name
           return [
-                  "this.write_int32(#{var}.size, out);",
+                  "var #{len} = Object.keys(#{var}).length;",
+                  "this.write_int32(#{len}, out);",
                   "for(var #{nv1} in #{var}) {",
                   :indent,
-                  "var #{nv2} = this.#{var}[#{nv1}];",
+                  "var #{nv2} = #{var}[#{nv1}];",
                   javascript_serialize_internal(nv1, types[1]),
                   javascript_serialize_internal(nv2, types[2]),
                   :deindent,
@@ -389,7 +393,7 @@ EOS2
         end
       else
         if $all_structs[types]
-          "this.#{var}.serialize_internal(out)"
+          "#{var}.serialize_internal(out)"
       
         elsif $available_types[types] && $available_types[types].ancestors.include?(SimpleDefinition)
           "this.write_#{types}(#{var}, out)"
@@ -404,7 +408,8 @@ EOS2
       types = field.referenced_types
       as = [
             "// Deserialize #{field.type} '#{field.name}'",
-            javascript_deserialize_internal("#{field.name}", types)
+            $debug_javascript ? "console.log(\"Deserialize '#{field.name}'\");" : nil,
+            javascript_deserialize_internal("this.#{field.name}", types)
            ]
       format_src(4, 4, as)
     end
@@ -417,12 +422,12 @@ EOS2
           nv = get_fresh_variable_name
           iter = get_fresh_variable_name
           return [
-                  "this.#{var} = [];",
-                  "var #{count} = read_int32(data);",
+                  "#{"var " unless var.include? "this."}#{var} = [];",
+                  "var #{count} = this.read_int32(data);",
                   "for(var #{iter}=0; #{iter}<#{count}; #{iter}++) {",
                   :indent,
                   javascript_deserialize_internal(nv, types[1]),
-                  "this.#{var}.push(#{nv});",
+                  "#{var}.push(#{nv});",
                   :deindent,
                   "}"
                  ]
@@ -431,13 +436,13 @@ EOS2
           nv1 = get_fresh_variable_name      
           nv2 = get_fresh_variable_name
           iter = get_fresh_variable_name
-          return ["this.#{var} = {};",
-                  "var #{count} = read_int32(data);",
-                  "for(#{iter}=0; #{iter}<#{count}; #{iter}++) {",
+          return ["#{"var " unless var.include? "this."}#{var} = {};",
+                  "var #{count} = this.read_int32(data);",
+                  "for(var #{iter}=0; #{iter}<#{count}; #{iter}++) {",
                   :indent,
                   javascript_deserialize_internal(nv1, types[1]),
                   javascript_deserialize_internal(nv2, types[2]),
-                  "this.#{var}[#{nv1}] = #{nv2};",
+                  "#{var}[#{nv1}] = #{nv2};",
                   :deindent,
                   "}"
                  ]
@@ -447,17 +452,17 @@ EOS2
       else
         case types
         when :map
-          "#{var} = {}"
+          "#{"var " unless var.include? "this."}#{var} = {}"
         when :list
-          "#{var} = []"
+          "#{"var " unless var.include? "this."}#{var} = []"
         else
           if $all_structs.key? types
             [
-             "#{var} = new #{types}();",
+             "#{"var " unless var.include? "this."}#{var} = new #{types}();",
              "#{var}.deserialize(data);"
             ]
           else
-            "#{var} = read_#{types}(data);"
+            "#{"var " unless var.include? "this."}#{var} = this.read_#{types}(data);"
           end
         end
       end
@@ -467,10 +472,9 @@ EOS2
 
 
   class JavascriptGenerator < JavascriptHelperMethods
-    @debug = true
-  
     def generate_code(structs, opts)
       pp opts
+      $debug_javascript = true if opts[:debug]
       base_template = Erubis::Eruby.new(javascript_base_class_template_str)
       class_template = Erubis::Eruby.new(javascript_class_template_str)
       keys = structs.keys.sort
