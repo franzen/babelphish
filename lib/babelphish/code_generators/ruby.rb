@@ -8,7 +8,7 @@ module Babelphish
     def serialize
       out = []
       serialize_internal(out)
-      @data = out.flatten.pack("C*")
+      out.flatten.pack("C*")
     end
 
     protected
