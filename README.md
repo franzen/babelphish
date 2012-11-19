@@ -33,9 +33,10 @@ struct(:TestComplex) {
 }
 
 Babelphish::CodeGenerator.new.generate(:ruby, file: 'test_babel.rb', module: 'BabelTest', parent_class: "Object")
+Babelphish::CodeGenerator.new.generate(:javascript, file: 'test_babel.js')
 ```
 
-The resulting _test_babel.rb_ contains the generated source code for the defined structs. Below is an example on how to use the generated code
+The resulting _test_babel.rb_ contains the generated source code for the defined structs. Below is an example on how to use the generated code in ruby
 
 ```ruby
 require_relative 'test_babel.rb'
@@ -49,8 +50,8 @@ t1.ip = "192.168.0.1"
 t1.guid = (0..255).to_a
 
 p1 = BabelTest::TestComplex.new
-p1.list1 += (1000..1020).to_a
-p1.list2 += (200..210).to_a
+p1.list1 = [0, 1, 255, 0x7FFFFFFF, 0x7FFFFFFF+1, 0xFFFFFFFE, 0xFFFFFFFF]
+p1.list2 = [0,1, 15,16, 127,128, 254,255]
 p1.map1[0] = 10
 p1.map1[10] = 100
 p1.map2["Hello"] = [BabelTest::Entry.new, BabelTest::Entry.new]
@@ -71,6 +72,27 @@ p2 = BabelTest::TestComplex.new
 p2.deserialize mem_buf
 ```
 
+And a javascript example that uses the generated file _test_babel.js_
+
+```javascript
+var c1 = new TestComplex();
+c1.list1 = [0, 1, 255, 0x7FFFFFFF, 0x7FFFFFFF+1, 0xFFFFFFFE, 0xFFFFFFFF];
+c1.list2 = [0,1, 15,16, 127,128, 254,255];
+
+c1.map1[0] = 10;
+c1.map1[10] = 100;
+
+c1.map2["FooBar"] = [new Entry(), new Entry()];
+
+
+console.log("SERIALIZE");
+var ca = c1.serialize();
+
+console.log("DESERIALIZE");
+var c2 = new TestComplex();
+c2.deserialize(new BabelDataReader(ca));
+console.log(c2);
+```
 
 
 ## Installation
