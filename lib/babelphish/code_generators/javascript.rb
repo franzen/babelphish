@@ -86,7 +86,7 @@ BabelHelper.prototype.read_short_binary = function (data) {
 };
 
 BabelHelper.prototype.read_ipnumber = function (data) {
-    var ip_array = this.read_short_binary();
+    var ip_array = this.read_short_binary(data);
     ip = "";
     for (i = 0, len = ip_array.length; i < len; i++) {
         b = ip_array[i];
