@@ -2,12 +2,12 @@ module Babelphish
   $language_generators = {}
   
   class BabelHelperMethods
-    def format_src(first_indent, following_indent, is)
-      indent = "#{" " * first_indent}"
+    def format_src(first_indent, following_indent, is, spc = " ")
+      indent = "#{spc * first_indent}"
       is.flatten.compact.map do |i|
         case i
         when :indent
-          indent << " " * following_indent
+          indent << spc * following_indent
           nil
         when :deindent
           indent = indent[0..-(following_indent+1)]
@@ -21,6 +21,11 @@ module Babelphish
     def get_fresh_variable_name
       @vindex = (@vindex || 0xFF) + 1
       return "var_#{@vindex.to_s(16)}"
+    end
+    
+    def camelize(*str)
+      ss = str.map(&:to_s).join("_").split(/_/).flatten
+      "#{ss.first.downcase}#{ss[1..-1].map(&:downcase).map(&:capitalize).join}"
     end
   end
   

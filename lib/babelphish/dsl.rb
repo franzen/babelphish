@@ -18,6 +18,9 @@ module Babelphish
 
   class SimpleDefinition < StructDefinition
     def simple?; true; end
+    def referenced_types
+      @type
+    end
   end
 
   class ComplexDefinition < StructDefinition
