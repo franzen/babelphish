@@ -14,7 +14,7 @@ struct 'TestBasic' do
   int16 :i16
   int32 :i32
   string :str
-  ipnumber :ip
+  ip_number :ip
   binary :guid
 end
 

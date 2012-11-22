@@ -93,7 +93,7 @@ BabelHelper.prototype.read_short_binary = function (data) {
     return data.read(this.read_int8(data));
 };
 
-BabelHelper.prototype.read_ipnumber = function (data) {
+BabelHelper.prototype.read_ip_number = function (data) {
     var ip_array = this.read_short_binary(data);
     ip = "";
     for (i = 0, len = ip_array.length; i < len; i++) {
@@ -184,7 +184,7 @@ BabelHelper.prototype.write_short_binary = function (v, out) {
     }
 }
 
-BabelHelper.prototype.write_ipnumber = function (v, out) {
+BabelHelper.prototype.write_ip_number = function (v, out) {
     if ((v instanceof Array) || (v instanceof Uint8Array)) {
         if (v.length != 4 && v.length != 0) this.raise_error("Unknown IP v4 number " + v);
         this.write_short_binary(v, out)
@@ -193,7 +193,7 @@ BabelHelper.prototype.write_ipnumber = function (v, out) {
         if (v.length > 0) {
             ss = v.split(".").map(Number);
         }
-        this.write_ipnumber(ss, out);
+        this.write_ip_number(ss, out);
     } else {
         this.raise_error("Unknown IP number '" + v + "'");
     }
@@ -347,7 +347,7 @@ EOS2
         "{}"
       when :int8, :int16, :int32
         "0"
-      when :string, :ipnumber
+      when :string, :ip_number
         "\"\""
       else
         raise "Unkown field type #{field.type}"

@@ -94,7 +94,7 @@ module Babelphish
     bool: BooleanDefinition,
     list: ListDefinition,
     map: MapDefinition,
-    ipnumber: IpNumberDefinition
+    ip_number: IpNumberDefinition
   }
 
 

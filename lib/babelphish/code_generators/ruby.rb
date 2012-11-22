@@ -45,7 +45,7 @@ module Babelphish
       data.read(read_int8(data))
     end
 
-    def read_ipnumber(data)
+    def read_ip_number(data)
       read_short_binary(data).bytes.to_a.join('.')
     end
 
@@ -122,7 +122,7 @@ module Babelphish
       end
     end
 
-    def write_ipnumber(v, out)
+    def write_ip_number(v, out)
       if v.is_a?(Array)
         raise_error "Unknown IP v4 number #{v}" unless v.size == 0 || v.size == 4 # Only IPv4 for now 
         write_short_binary(v, out)
@@ -130,7 +130,7 @@ module Babelphish
         ss = v.split(/\./).map do |s|
           s.to_i
         end
-        write_ipnumber(ss, out)
+        write_ip_number(ss, out)
       else
         raise_error "Unknown IP number '#{v}'"
       end
@@ -196,7 +196,7 @@ module Babelphish
         "{}"
       when :int8, :int16, :int32
         "0"
-      when :string, :ipnumber
+      when :string, :ip_number
         "\"\""
       else
         raise "Unkown field type #{field.type}"

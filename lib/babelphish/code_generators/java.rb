@@ -13,9 +13,9 @@ abstract class BabelBase <%= toplevel_class %> {
 		return baos.toByteArray();
 	}
 
-	abstract void serializeInternal(ByteArrayOutputStream baos);
+	abstract void serializeInternal(ByteArrayOutputStream baos) throws IOException;
 
-	abstract void deserialize(ByteArrayInputStream baos);
+	abstract void deserialize(ByteArrayInputStream baos) throws IOException;
 
 	protected int readInt8(ByteArrayInputStream data) {
 		return data.read() & 0xff;
@@ -162,9 +162,9 @@ public class <%= c.name %> extends BabelBase {
 <% end %>
 
 	@Override
-	void serializeInternal(ByteArrayOutputStream baos) {
+	void serializeInternal(ByteArrayOutputStream baos) throws IOException {
 <% c.simple_fields.each do |f| %>
-<%= this.camelize("write", f.type) %>(<%= f.name %>, baos)
+		<%= this.camelize("write", f.type) %>(this.<%= f.name %>, baos);
 <% end %>
 <% c.complex_fields.each do |f| %>
 <%= this.java_serialize_complex f %>
@@ -172,9 +172,9 @@ public class <%= c.name %> extends BabelBase {
 	}
 
 	@Override
-	void deserialize(ByteArrayInputStream bais) {
+	void deserialize(ByteArrayInputStream bais) throws IOException {
 <% c.simple_fields.each do |f| %>
-this.<%= f.name %> = <%= this.camelize("read", f.type) %>(bais)
+		this.<%= f.name %> = <%= this.camelize("read", f.type) %>(bais);
 <% end %>
 <% c.complex_fields.each do |f| %>
 <%= this.java_deserialize_complex f %>
@@ -206,7 +206,7 @@ EOS2
           "0"
         when :int32
           "0L"
-        when :string, :ipnumber
+        when :string, :ip_number
           "\"\""
         else
           if $all_structs[types]
@@ -243,7 +243,7 @@ EOS2
           is_reference_type ? "Integer" : "int"
         when :int32
           is_reference_type ? "Long" : "long"
-        when :string, :ipnumber
+        when :string, :ip_number
           "String"
         else
           if $all_structs[types]
@@ -271,8 +271,8 @@ EOS2
           nv = get_fresh_variable_name
           idx = get_fresh_variable_name
           return [
-                  "writeInt32(#{var}.length(), out);",
-                  "for(int #{idx}=0; #{idx}<#{var}.length; #{idx}++) {",
+                  "writeInt32(#{var}.size(), baos);",
+                  "for(int #{idx}=0; #{idx}<#{var}.size(); #{idx}++) {",
                   :indent,
                   "#{java_get_type_declaration types[1]} #{nv} = #{var}.get(#{idx});",
                   java_serialize_internal(nv, types[1]),
@@ -283,8 +283,8 @@ EOS2
           nv1 = get_fresh_variable_name      
           nv2 = get_fresh_variable_name
           return [
-                  "writeInt32(#{var}.size(), out)",
-                  "for(#{java_get_type_declaration types[1]} #{nv1} : #{var}.keys()) {",
+                  "writeInt32(#{var}.size(), baos);",
+                  "for(#{java_get_type_declaration types[1]} #{nv1} : #{var}.keySet()) {",
                   :indent,
                   "#{java_get_type_declaration types[2]} #{nv2} = #{var}.get(#{nv1});",
                   java_serialize_internal(nv1, types[1]),
@@ -297,10 +297,10 @@ EOS2
         end
       else
         if $all_structs[types]
-          "#{var}.serialize_internal(out)"
+          "#{var}.serializeInternal(baos);"
       
         elsif $available_types[types] && $available_types[types].ancestors.include?(SimpleDefinition)
-          "#{camelize "write", types}(#{var}, out)"
+          "#{self.camelize "write", types}(#{var}, baos);"
       
         else
           raise "Missing code generation case #{types}"
@@ -325,12 +325,12 @@ EOS2
           nv = get_fresh_variable_name
           iter = get_fresh_variable_name
           return [
-                  "#{"#{java_get_type_declaration(types[1])} " unless var.include? "this."}#{var} = #{java_get_empty_declaration(types[1])};",
-                  "int #{count} = this.readInt32(data);",
+                  "#{"#{java_get_type_declaration(types)} " unless var.include? "this."}#{var} = #{java_get_empty_declaration(types)};",
+                  "int #{count} = (int)this.readInt32(bais);",
                   "for(int #{iter}=0; #{iter}<#{count}; #{iter}++) {",
                   :indent,
                   java_deserialize_internal(nv, types[1]),
-                  "#{var}.append(#{nv});",
+                  "#{var}.add(#{nv});",
                   :deindent,
                   "}"
                  ]
@@ -340,12 +340,12 @@ EOS2
           nv2 = get_fresh_variable_name
           iter = get_fresh_variable_name
           return ["#{"#{java_get_type_declaration(types)} " unless var.include? "this."}#{var} = #{java_get_empty_declaration(types)};",
-                  "int #{count} = readInt32(data);",
-                  "for(var #{iter}=0; #{iter}<#{count}; #{iter}++) {",
+                  "int #{count} = (int)readInt32(bais);",
+                  "for(int #{iter}=0; #{iter}<#{count}; #{iter}++) {",
                   :indent,
                   java_deserialize_internal(nv1, types[1]),
                   java_deserialize_internal(nv2, types[2]),
-                  "#{var}.put(#{nv1}) = #{nv2};",
+                  "#{var}.put(#{nv1}, #{nv2});",
                   :deindent,
                   "}"
                  ]
@@ -353,21 +353,21 @@ EOS2
           raise "Missing serialization for #{var}"
         end
       else
-        case types
-        when :map
-          "#{var} = #{java_get_empty_declaration(types)}"
-        when :list
-          "#{var} = #{java_get_empty_declaration(types)}"
-        else
+#        case types
+#        when :map
+#          "#{var} = #{java_get_empty_declaration(types)}"
+#        when :list
+#          "#{var} = #{java_get_empty_declaration(types)}"
+#        else
           if $all_structs.key? types
             [
-             "#{var} = #{types}.new",
-             "#{var}.deserialize(data)"
+             "#{types} #{var} = new #{types}();",
+             "#{var}.deserialize(bais);"
             ]
           else
-            "#{var} = #{self.camelize("read", types)}}(data)"
+            "#{"#{java_get_type_declaration(types)} " unless var.include? "this."}#{var} = #{self.camelize("read", types)}(bais);"
           end
-        end
+#        end
       end
     end
   end
@@ -389,13 +389,21 @@ EOS2
     
       # User defined super class?
       toplevel = opts[:parent_class] || nil
-      toplevel = " < #{toplevel}" if toplevel 
+      toplevel = " extends #{toplevel}" if toplevel 
       return "#{java_get_begin_module(opts)}#{base_template.result({ toplevel_class: toplevel })}\n\n#{src.join("\n\n")}"
     end
   
     def java_get_begin_module(opts)
       if opts[:package]
-        "package #{opts[:module]}\n\n"
+        [
+          "package #{opts[:package]};\n",
+          "import java.io.ByteArrayInputStream;",
+          "import java.io.ByteArrayOutputStream;",
+          "import java.io.IOException;",
+          "import java.util.ArrayList;",
+          "import java.util.HashMap;",
+          "import java.nio.charset.Charset;\n\n"
+        ].join("\n")
       else 
         nil
       end
