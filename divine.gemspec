@@ -1,11 +1,11 @@
 # -*- encoding: utf-8 -*-
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'babelphish/version'
+require 'divine/version'
 
 Gem::Specification.new do |gem|
   gem.name          = "divine"
-  gem.version       = Babelphish::VERSION
+  gem.version       = Divine::VERSION
   gem.authors       = ["Nils Franzen"]
   gem.email         = ["nils@franzens.org"]
   gem.description   = %q{A simple data serialization generator for java, ruby and javascript}
