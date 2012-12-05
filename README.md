@@ -1,13 +1,13 @@
-# Babelphish
+# Divine
 
-Babelphish provides a compact data interchange format for Ruby, Java and Javascript. Babelphish is similar to [Thrift](http://thrift.apache.org/) and [Protobuf](http://code.google.com/p/protobuf/), but I try to overcome of some of the shortcommings I think the other libraries have. 
+Divine provides a compact data interchange format for Ruby, Java and Javascript. Divine is similar to [Thrift](http://thrift.apache.org/) and [Protobuf](http://code.google.com/p/protobuf/), but I try to overcome of some of the shortcommings I think the other libraries have. 
 
 
 ## Example
 
 
 ```ruby
-require 'babelphish'
+require 'divine'
 
 struct 'TestBasic' do
   int8 :i8
@@ -32,8 +32,8 @@ struct(:TestComplex) {
   }
 }
 
-Babelphish::CodeGenerator.new.generate(:ruby, file: 'test_babel.rb', module: 'BabelTest', parent_class: "Object")
-Babelphish::CodeGenerator.new.generate(:javascript, file: 'test_babel.js')
+Divine::CodeGenerator.new.generate(:ruby, file: 'test_babel.rb', module: 'BabelTest', parent_class: "Object")
+Divine::CodeGenerator.new.generate(:javascript, file: 'test_babel.js')
 ```
 
 The resulting _test_babel.rb_ contains the generated source code for the defined structs. Below is an example on how to use the generated code in ruby
@@ -99,7 +99,7 @@ console.log(c2);
 
 Add this line to your application's Gemfile:
 
-    gem 'babelphish'
+    gem 'divine'
 
 And then execute:
 
@@ -107,7 +107,7 @@ And then execute:
 
 Or install it yourself as:
 
-    $ gem install babelphish
+    $ gem install divine
 
 ## Usage
 

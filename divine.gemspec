@@ -4,7 +4,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require 'babelphish/version'
 
 Gem::Specification.new do |gem|
-  gem.name          = "babelphish"
+  gem.name          = "divine"
   gem.version       = Babelphish::VERSION
   gem.authors       = ["Nils Franzen"]
   gem.email         = ["nils@franzens.org"]

@@ -1,4 +1,4 @@
-module Babelphish
+module Divine
   $all_structs = {}
 
   class StructDefinition

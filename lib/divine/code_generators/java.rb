@@ -1,4 +1,4 @@
-module Babelphish
+module Divine
 
   class JavaHelperMethods < BabelHelperMethods
     def java_base_class_template_str

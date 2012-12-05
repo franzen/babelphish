@@ -1,4 +1,4 @@
-module Babelphish
+module Divine
 
   class RubyHelperMethods < BabelHelperMethods
     def ruby_base_class_template_str

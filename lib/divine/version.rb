@@ -1,3 +1,3 @@
-module Babelphish
+module Divine
   VERSION = "0.0.1"
 end

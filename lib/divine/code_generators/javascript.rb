@@ -6,7 +6,7 @@
 
 require 'pp'
 
-module Babelphish
+module Divine
   $debug_javascript = false
   
   class JavascriptHelperMethods < BabelHelperMethods

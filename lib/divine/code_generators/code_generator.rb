@@ -1,4 +1,4 @@
-module Babelphish
+module Divine
   $language_generators = {}
   
   class BabelHelperMethods
