@@ -3,6 +3,13 @@ module Divine
   class JavaHelperMethods < BabelHelperMethods
     def java_base_class_template_str
       <<EOS
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.HashMap;
+
 abstract class BabelBase <%= toplevel_class %> {
 	private static final Charset UTF8 = Charset.forName("UTF-8");
 
@@ -53,7 +60,7 @@ abstract class BabelBase <%= toplevel_class %> {
 		if (c > Integer.MAX_VALUE) {
 			throw new IndexOutOfBoundsException("Binary data to big for java");
 		}
-		return readBytes((int) readInt32(data), data);
+		return readBytes((int) c, data);
 	}
 
 	protected byte[] readShortBinary(ByteArrayInputStream data) throws IOException {
@@ -96,7 +103,7 @@ abstract class BabelBase <%= toplevel_class %> {
 	}
 
 	protected void writeInt32(long v, ByteArrayOutputStream out) {
-		if (v > 0xFFFFFFFF) { // Max 4.294.967.295
+		if (v > 0xFFFFFFFFL) { // Max 4.294.967.295
 			raiseError("Too large int32 number: " + v);
 		}
 		writeInt8((int) ((v >> 24) & 0xFF), out);
@@ -117,7 +124,7 @@ abstract class BabelBase <%= toplevel_class %> {
 	}
 
 	protected void writeBinary(byte[] v, ByteArrayOutputStream out) throws IOException {
-		if (v.length > 0xFFFFFFFF) {
+		if (v.length > 0xFFFFFFFFL) {
 			raiseError("Too large binary: " + v.length + " bytes");
 		}
 		writeInt32(v.length, out);
@@ -133,10 +140,13 @@ abstract class BabelBase <%= toplevel_class %> {
 	}
 
 	protected void writeIpNumber(String v, ByteArrayOutputStream out) throws IOException {
-		String[] bs = v.split(".");
-		byte[] ss = new byte[bs.length];
-		for (int i = 0; i < bs.length; i++) {
-			ss[i] = (byte) (Integer.parseInt(bs[i]) & 0xFF);
+		byte[] ss = new byte[0];
+		if(!v.isEmpty()){
+			String[] bs = v.split("\\\\.");
+			ss = new byte[bs.length];
+			for (int i = 0; i < bs.length; i++) {
+				ss[i] = (byte) (Integer.parseInt(bs[i]) & 0xFF);
+			}
 		}
 		if (ss.length == 0 || ss.length == 4) {
 			writeShortBinary(ss, out);
@@ -154,7 +164,7 @@ EOS
 
     def java_class_template_str
       <<EOS2
-public class <%= c.name %> extends BabelBase {
+class <%= c.name %> extends BabelBase {
 <% unless c.fields.empty? %>
 <% c.fields.each do |f| %>
 	public <%= this.java_get_type_declaration(f) %> <%= f.name %> = <%= this.java_get_empty_declaration(f) %>;
