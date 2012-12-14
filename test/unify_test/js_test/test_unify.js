@@ -1,17 +1,3 @@
-# Some notes on Javascript and numbers:
-# . The bitwise operators and shift operators operate on 32-bit ints.
-# . Note that all the positive and negative integers whose magnitude is no greater than 253 are representable in the Number type (indeed, the integer 0 has two representations, +0 and −0).
-# . They are 64-bit floating point values, the largest exact integral value is 2^53, or 9007199254740992 (-9007199254740992 to 9007199254740992)
-
-
-require 'pp'
-
-module Divine
-  $debug_javascript = false
-  
-  class JavascriptHelperMethods < BabelHelperMethods
-    def javascript_base_class_template_str
-      <<EOS
 // ------------------------------------------------------------ BabelDataReader
 function BabelDataReader(data) {
     this.data = data;
@@ -106,21 +92,6 @@ BabelHelper.prototype.read_ip_number = function (data) {
     return ip;
 };
 
-BabelHelper.prototype.read_ipv6_number = function (data) {
-    var ip_array = this.read_short_binary(data);
-    ip = "";
-    for (i = 0, len = ip_array.length; i < len; i+=2) {
-        b1 = ip_array[i];
-        b2 = ip_array[i+1];
-        if (ip.length > 0) {
-            ip += ":";
-        }
-        ip += b1.toString(16);
-        ip += b2.toString(16);
-    }
-    return ip;
-};
-
 BabelHelper.prototype.read_string = function (data) {
     return this.decode_utf8(data.read(this.read_int16(data)))
 };
@@ -183,21 +154,6 @@ BabelHelper.prototype.write_binary = function (v, out) {
     }
 }
 
-BabelHelper.prototype.write_16_binary = function (v, out) {
-    if ((v instanceof Array) || (v instanceof Uint8Array)) {
-        if (v.length > 0xFF) this.raise_error("Too large 16 binary: " + v.length*2 + " (" + v.constructor.name + ")");
-        this.write_int8(v.length * 2, out)
-        for (i = 0, len = v.length; i < len; i++) {
-	  this.write_int16(v[i], out);
-        }
-        
-    } else if (v == null) {
-        this.raise_error("Unsupported binary 'null'");
-    } else {
-        this.raise_error("Unsupported binary of type '" + v.constructor.name + "'");
-    }
-}
-
 BabelHelper.prototype.write_short_binary = function (v, out) {
     if ((v instanceof Array) || (v instanceof Uint8Array)) {
         if (v.length > 0xFF) this.raise_error("Too large binary: " + v.length + " (" + v.constructor.name + ")");
@@ -226,21 +182,6 @@ BabelHelper.prototype.write_ip_number = function (v, out) {
         this.write_ip_number(ss, out);
     } else {
         this.raise_error("Unknown IP number '" + v + "'");
-    }
-}
-
-BabelHelper.prototype.write_ipv6_number = function (v, out) {
-    if ((v instanceof Array) || (v instanceof Uint8Array)) {
-        if (v.length != 8 && v.length != 0) this.raise_error("Unknown IP v6 number " + v);
-        this.write_16_binary(v, out)
-    } else if (v.constructor == String) {
-        var ss = [];
-        if (v.length > 0) {
-            ss = v.split(":").map( function(t){ return parseInt(t, 16) } );
-        }
-        this.write_ipv6_number(ss, out);
-    } else {
-        this.raise_error("Unknown IP v6 number '" + v + "'");
     }
 }
 
@@ -344,214 +285,42 @@ BabelHelper.prototype.decode_utf8 = function (utf8_data) {
 BabelHelper.prototype.raise_error = function (msg) {
     throw "[" + this.constructor.name + "] " + msg;
 }
-EOS
-    end
 
-    def javascript_class_template_str
-      <<EOS2
-// ------------------------------------------------------------ <%= c.name %>
-function <%= c.name %>() {
+
+// ------------------------------------------------------------ UnifySer
+function UnifySer() {
    BabelHelper.call(this);  
-<% c.fields.each do |f| %>
-   this.<%= f.name %> = <%= this.javascript_get_empty_declaration(f) %>;
-<% end %>
+   this.str = "";
+   this.map1 = {};
 }
 
 // Inherit BabelHelper
-<%= c.name %>.prototype = new BabelHelper();
+UnifySer.prototype = new BabelHelper();
  
 // Correct the constructor pointer because it points to BabelHelper
-<%= c.name %>.prototype.constructor = <%= c.name %>;
+UnifySer.prototype.constructor = UnifySer;
 
-// Define the methods of <%= c.name %>
-<%= c.name %>.prototype.deserialize = function (data) {
-<% c.simple_fields.each do |f| %>
-   this.<%= f.name %> = this.read_<%= f.type %>(data);
-<% end %>
-<% c.complex_fields.each do |f| %>
-<%= this.javascript_deserialize_complex f %>
-<% end %>
+// Define the methods of UnifySer
+UnifySer.prototype.deserialize = function (data) {
+   this.str = this.read_string(data);
+    // Deserialize map 'map1'
+    this.map1 = {};
+    var var_100 = this.read_int32(data);
+    for(var var_103=0; var_103<var_100; var_103++) {
+        var var_101 = this.read_int8(data);
+        var var_102 = this.read_int32(data);
+        this.map1[var_101] = var_102;
+    }
 }
 
-<%= c.name %>.prototype.serialize_internal = function(out) {
-<% c.simple_fields.each do |f| %>
-   this.write_<%= f.type %>(this.<%= f.name %>, out);
-<% end %>
-<% c.complex_fields.each do |f| %>
-<%= this.javascript_serialize_complex f %>
-<% end %>
+UnifySer.prototype.serialize_internal = function(out) {
+   this.write_string(this.str, out);
+    // Serialize map 'map1'
+    var var_104 = Object.keys(this.map1).length;
+    this.write_int32(var_104, out);
+    for(var var_105 in this.map1) {
+        var var_106 = this.map1[var_105];
+        this.write_int8(var_105, out)
+        this.write_int32(var_106, out)
+    }
 }
-EOS2
-    end
-
-    def javascript_get_empty_declaration(field)
-      case field.type
-      when :list, :binary, :short_binary
-        "[]"
-      when :map
-        "{}"
-      when :int8, :int16, :int32
-        "0"
-      when :string, :ip_number, :ipv6_number
-        "\"\""
-      else
-        raise "Unkown field type #{field.type}"
-      end
-    end
-
-    def javascript_serialize_complex(field)
-      types = field.referenced_types
-      as = [
-            "// Serialize #{field.type} '#{field.name}'",
-            $debug_javascript ? "console.log(\"Serialize '#{field.name}'\");" : nil,
-            javascript_serialize_internal("this.#{field.name}", types)
-           ]
-      format_src(4, 4, as)
-    end
-
-    def javascript_serialize_internal(var, types)
-      if types.respond_to? :first
-        case types.first
-        when :list
-          nv = get_fresh_variable_name
-          idx = get_fresh_variable_name
-          return [
-                  "this.write_int32(#{var}.length, out);",
-                  "for(var #{idx}=0; #{idx}<#{var}.length; #{idx}++) {",
-                  :indent,
-                  "var #{nv} = #{var}[#{idx}];",
-                  javascript_serialize_internal(nv, types[1]),
-                  :deindent,
-                  "}"
-                 ]
-        when :map
-          len = get_fresh_variable_name
-          nv1 = get_fresh_variable_name      
-          nv2 = get_fresh_variable_name
-          key = get_fresh_variable_name
-          return [
-                  "var #{len} = Object.keys(#{var}).length;",
-                  "this.write_int32(#{len}, out);",
-                  "for(var #{nv1} in #{var}) {",
-                  :indent,
-                  "var #{nv2} = #{var}[#{nv1}];",
-                  javascript_serialize_internal(nv1, types[1]),
-                  javascript_serialize_internal(nv2, types[2]),
-                  :deindent,
-                  "}"
-                 ]
-        else
-          raise "Missing serialization for #{var}"
-        end
-      else
-        if $all_structs[types]
-          "#{var}.serialize_internal(out)"
-      
-        elsif $available_types[types] && $available_types[types].ancestors.include?(SimpleDefinition)
-          "this.write_#{types}(#{var}, out)"
-      
-        else
-          raise "Missing code generation case #{types}"
-        end
-      end
-    end
-
-    def javascript_deserialize_complex(field)
-      types = field.referenced_types
-      as = [
-            "// Deserialize #{field.type} '#{field.name}'",
-            $debug_javascript ? "console.log(\"Deserialize '#{field.name}'\");" : nil,
-            javascript_deserialize_internal("this.#{field.name}", types)
-           ]
-      format_src(4, 4, as)
-    end
-
-    def javascript_deserialize_internal(var, types)
-      if types.respond_to? :first
-        case types.first
-        when :list
-          count = get_fresh_variable_name
-          nv = get_fresh_variable_name
-          iter = get_fresh_variable_name
-          return [
-                  "#{"var " unless var.include? "this."}#{var} = [];",
-                  "var #{count} = this.read_int32(data);",
-                  "for(var #{iter}=0; #{iter}<#{count}; #{iter}++) {",
-                  :indent,
-                  javascript_deserialize_internal(nv, types[1]),
-                  "#{var}.push(#{nv});",
-                  :deindent,
-                  "}"
-                 ]
-        when :map
-          count = get_fresh_variable_name
-          nv1 = get_fresh_variable_name      
-          nv2 = get_fresh_variable_name
-          iter = get_fresh_variable_name
-          return ["#{"var " unless var.include? "this."}#{var} = {};",
-                  "var #{count} = this.read_int32(data);",
-                  "for(var #{iter}=0; #{iter}<#{count}; #{iter}++) {",
-                  :indent,
-                  javascript_deserialize_internal(nv1, types[1]),
-                  javascript_deserialize_internal(nv2, types[2]),
-                  "#{var}[#{nv1}] = #{nv2};",
-                  :deindent,
-                  "}"
-                 ]
-        else
-          raise "Missing serialization for #{var}"
-        end
-      else
-        case types
-        when :map
-          "#{"var " unless var.include? "this."}#{var} = {}"
-        when :list
-          "#{"var " unless var.include? "this."}#{var} = []"
-        else
-          if $all_structs.key? types
-            [
-             "#{"var " unless var.include? "this."}#{var} = new #{types}();",
-             "#{var}.deserialize(data);"
-            ]
-          else
-            "#{"var " unless var.include? "this."}#{var} = this.read_#{types}(data);"
-          end
-        end
-      end
-    end
-  end
-    
-
-
-  class JavascriptGenerator < JavascriptHelperMethods
-    def generate_code(structs, opts)
-      pp opts
-      $debug_javascript = true if opts[:debug]
-      base_template = Erubis::Eruby.new(javascript_base_class_template_str)
-      class_template = Erubis::Eruby.new(javascript_class_template_str)
-      keys = structs.keys.sort
-      src = keys.map do |k|
-        ss = structs[k]
-        # TODO: Should we merge different versions and deduce deprecated methods, warn for incompatible changes, etc?
-        raise "Duplicate definitions of struct #{k}" if ss.size > 1
-        class_template.result( c: ss.first, this: self )
-      end
-    
-      # User defined super class?
-      toplevel = opts[:parent_class] || nil
-      toplevel = " < #{toplevel}" if toplevel 
-      return "#{javascript_get_begin_module(opts)}#{base_template.result({ toplevel_class: toplevel })}\n\n#{src.join("\n\n")}#{javascript_get_end_module(opts)}"
-    end
-  
-    def javascript_get_begin_module(opts)
-      nil
-    end
-
-    def javascript_get_end_module(opts)
-      nil
-    end
-  end
-
-
-  $language_generators[:javascript] = JavascriptGenerator.new
-end

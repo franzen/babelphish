@@ -1,10 +1,15 @@
 eval(require('fs').readFileSync('./test_complex.js', 'utf8')); 
 var assert = require('assert');
+var fs = require('fs');
 
 var com_ser = buildObject();
-var ca = com_ser.serialize();
+
+//var ca = com_ser.serialize();
+//serialize(ca);
+var read = deserialize();
+
 var com_deser = new Complex();
-com_deser.deserialize(new BabelDataReader(ca));
+com_deser.deserialize(new BabelDataReader(read));
 compare(com_ser, com_deser);
 
 function buildObject(){
@@ -30,4 +35,30 @@ function compare(obj1, obj2){
   assert.equal(obj1.list1[0]["AA"].length, obj2.list1[0]["AA"].length);
   assert.equal(obj1.list1[0]["AA"][0].list1.length, obj2.list1[0]["AA"][0].list1.length);
   assert.equal(obj1.list1[0]["AA"][0].list1[2], obj2.list1[0]["AA"][0].list1[2]);
+}
+
+function serialize(obj){
+  var bBuffer = new Buffer(obj);
+  fs.writeFileSync(__dirname +  '/bin.babel.js', bBuffer, function (err) {
+    if (err) {
+      return console.log(err);
+    }
+  });
+}
+
+function deserialize(){
+  var file = __dirname +  '/bin.babel.java'
+  console.log(file);
+  var data = fs.readFileSync(file);
+  data = toArray(data);
+  return data;
+  
+}
+
+function toArray(buffer) {
+    var view = new Uint8Array(buffer.length);
+    for (var i = 0; i < buffer.length; ++i) {
+        view[i] = buffer[i];
+    }
+    return view;
 }

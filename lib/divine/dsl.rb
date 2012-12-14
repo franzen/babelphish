@@ -66,6 +66,9 @@ module Divine
   class IpNumberDefinition < SimpleDefinition
   end
 
+  class Ipv6NumberDefinition < SimpleDefinition
+  end
+
 
   class ListDefinition < ComplexDefinition
     protected
@@ -94,7 +97,8 @@ module Divine
     bool: BooleanDefinition,
     list: ListDefinition,
     map: MapDefinition,
-    ip_number: IpNumberDefinition
+    ip_number: IpNumberDefinition,
+    ipv6_number: Ipv6NumberDefinition
   }
 
 

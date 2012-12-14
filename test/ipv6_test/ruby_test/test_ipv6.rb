@@ -1,9 +1,7 @@
-module Divine
+module BabelTest
 
-  class RubyHelperMethods < BabelHelperMethods
-    def ruby_base_class_template_str
-      %q{
-  class BabelBase<%= toplevel_class %>
+
+  class BabelBase < Object
     public
     def serialize
       out = []
@@ -202,213 +200,30 @@ module Divine
       return string
     end
   end
-    }
-    end
+    
 
-    def ruby_class_template_str
-      %q{
-  class <%= c.name %> < BabelBase
-  <% unless c.fields.empty? %>
-      attr_accessor <%= c.fields.map { |x| ":#{x.name}" }.join(', ') %>
+
+  class IPV6 < BabelBase
+      attr_accessor :ip, :ipv6
 
       def initialize()
           super
-  <% c.fields.each do |f| %>
-          @<%= f.name %> ||= <%= this.ruby_get_empty_declaration(f) %>
-  <% end %>
+          @ip ||= ""
+          @ipv6 ||= ""
       end
-  <% end %>
 
       def serialize_internal(out)
         print "+"
-        <% c.simple_fields.each do |f| %>
-        write_<%= f.type %>(<%= f.name %>, out)
-        <% end %>
-        <% c.complex_fields.each do |f| %>
-  <%= this.ruby_serialize_complex f %>
-        <% end %>
+        write_ip_number(ip, out)
+        write_ipv6_number(ipv6, out)
       end
 
       def deserialize(data)
         print "-"
-        <% c.simple_fields.each do |f| %>
-        @<%= f.name %> = read_<%= f.type %>(data)
-        <% end %>
-        <% c.complex_fields.each do |f| %>
-  <%= this.ruby_deserialize_complex f %>
-        <% end %>
+        @ip = read_ip_number(data)
+        @ipv6 = read_ipv6_number(data)
       end
-  end
-    }
-    end
-
-    def ruby_get_empty_declaration(field)
-      case field.type
-      when :list, :binary, :short_binary
-        "[]"
-      when :map
-        "{}"
-      when :int8, :int16, :int32
-        "0"
-      when :string, :ip_number, :ipv6_number
-        "\"\""
-      else
-        raise "Unkown field type #{field.type}"
-      end
-    end
-
-    def ruby_serialize_complex(field)
-      types = field.referenced_types
-      as = [
-            "# Serialize #{field.type} '#{field.name}'",
-            ruby_serialize_internal(field.name, types)
-           ]
-      format_src(6, 3, as)
-    end
-
-    def ruby_serialize_internal(var, types)
-      if types.respond_to? :first
-        case types.first
-        when :list
-          nv = get_fresh_variable_name
-          return [
-                  "write_int32(#{var}.size, out)",
-                  "#{var}.each do |#{nv}|",
-                  :indent,
-                  ruby_serialize_internal(nv, types[1]),
-                  :deindent,
-                  "end"
-                 ]
-        when :map
-          nv1 = get_fresh_variable_name      
-          nv2 = get_fresh_variable_name
-          return [
-                  "write_int32(#{var}.size, out)",
-                  "#{var}.each_pair do |#{nv1}, #{nv2}|",
-                  :indent,
-                  ruby_serialize_internal(nv1, types[1]),
-                  ruby_serialize_internal(nv2, types[2]),
-                  :deindent,
-                  "end"
-                 ]
-        else
-          raise "Missing serialization for #{var}"
-        end
-      else
-        if $all_structs[types]
-          "#{var}.serialize_internal(out)"
-      
-        elsif $available_types[types] && $available_types[types].ancestors.include?(SimpleDefinition)
-          "write_#{types}(#{var}, out)"
-      
-        else
-          raise "Missing code generation case #{types}"
-        end
-      end
-    end
-
-    def ruby_deserialize_complex(field)
-      types = field.referenced_types
-      as = [
-            "# Deserialize #{field.type} '#{field.name}'",
-            ruby_deserialize_internal("@#{field.name}", types)
-           ]
-      format_src(6, 3, as)
-    end
-
-    def ruby_deserialize_internal(var, types)
-      if types.respond_to? :first
-        case types.first
-        when :list
-          count = get_fresh_variable_name
-          nv = get_fresh_variable_name
-          return [
-                  "#{var} = []",
-                  "#{count} = read_int32(data)",
-                  "(1..#{count}).each do",
-                  :indent,
-                  ruby_deserialize_internal(nv, types[1]),
-                  "#{var} << #{nv}",
-                  :deindent,
-                  "end"
-                 ]
-        when :map
-          count = get_fresh_variable_name
-          nv1 = get_fresh_variable_name      
-          nv2 = get_fresh_variable_name
-          return ["#{var} = {}",
-                  "#{count} = read_int32(data)",
-                  "(1..#{count}).each do",
-                  :indent,
-                  ruby_deserialize_internal(nv1, types[1]),
-                  ruby_deserialize_internal(nv2, types[2]),
-                  "#{var}[#{nv1}] = #{nv2}",
-                  :deindent,
-                  "end"
-                 ]
-        else
-          raise "Missing serialization for #{var}"
-        end
-      else
-        case types
-        when :map
-          "#{var} = {}"
-        when :list
-          "#{var} = []"
-        else
-          if $all_structs.key? types
-            [
-             "#{var} = #{types}.new",
-             "#{var}.deserialize(data)"
-            ]
-          else
-            "#{var} = read_#{types}(data)"
-          end
-        end
-      end
-    end
   end
     
 
-
-  class RubyGenerator < RubyHelperMethods
-    @debug = true
-  
-    def generate_code(structs, opts)
-      pp opts
-      base_template = Erubis::Eruby.new(ruby_base_class_template_str)
-      class_template = Erubis::Eruby.new(ruby_class_template_str)
-      keys = structs.keys.sort
-      src = keys.map do |k|
-        ss = structs[k]
-        # TODO: Should we merge different versions and deduce deprecated methods, warn for incompatible changes, etc?
-        raise "Duplicate definitions of struct #{k}" if ss.size > 1
-        class_template.result( c: ss.first, this: self )
-      end
-    
-      # User defined super class?
-      toplevel = opts[:parent_class] || nil
-      toplevel = " < #{toplevel}" if toplevel 
-      return "#{ruby_get_begin_module(opts)}#{base_template.result({ toplevel_class: toplevel })}\n\n#{src.join("\n\n")}#{ruby_get_end_module(opts)}"
-    end
-  
-    def ruby_get_begin_module(opts)
-      if opts[:module]
-        "module #{opts[:module]}\n\n"
-      else 
-        nil
-      end
-    end
-
-    def ruby_get_end_module(opts)
-      if opts[:module]
-        "\n\nend\n"
-      else
-        nil
-      end
-    end
-  end
-
-
-  $language_generators[:ruby] = RubyGenerator.new
 end

@@ -79,6 +79,22 @@ abstract class BabelBase <%= toplevel_class %> {
 		return ip;
 	}
 
+	protected String readIpv6Number(ByteArrayInputStream data) throws IOException {
+		byte[] ips = readShortBinary(data);
+		String ip = "";
+		for (int i = 0; i < ips.length; i+=2) {
+			int f   = ips[i] & 0xFF;
+			int l   = ips[i+1] & 0xFF;
+			ip += f == 0? "" : Integer.toHexString(f);
+			ip += (f == 0 && l == 0)? "" : (l < 10 && f != 0? "0" + Integer.toHexString(l): Integer.toHexString(l));
+			if (i < ips.length-2) {
+				ip += ":";
+			}
+		}
+		ip = ip.replaceAll(":{3,}", "::");
+		return ip;
+	}
+
 	protected void writeInt8(int v, ByteArrayOutputStream out) {
 		if (v > 0xFF) { // Max 255
 			raiseError("Too large int8 number: " + v);
@@ -131,6 +147,17 @@ abstract class BabelBase <%= toplevel_class %> {
 		out.write(v);
 	}
 
+
+	protected void write16Binary(int[] v, ByteArrayOutputStream out) throws IOException {
+		if (v.length > 0xFF) {
+			raiseError("Too large 16_binary: " + (v.length*2) + " bytes");
+		}
+		writeInt8(v.length*2, out);
+		for(int i = 0; i < v.length; i++){
+			this.writeInt16(v[i], out);
+		}
+	}
+
 	protected void writeShortBinary(byte[] v, ByteArrayOutputStream out) throws IOException {
 		if (v.length > 0xFF) {
 			raiseError("Too large short_binary: " + v.length + " bytes");
@@ -152,6 +179,42 @@ abstract class BabelBase <%= toplevel_class %> {
 			writeShortBinary(ss, out);
 		} else {
 			raiseError("Unknown IP v4 number " + v); // Only IPv4 for now 
+		}
+	}
+        
+        protected void writeIpv6Number(String v, ByteArrayOutputStream out)
+			throws IOException {
+		v = v.replaceAll(" {1,}", "") + " "; // Temporary: To avoid the split problem when we have : at the
+					// end of "v"
+		int[] ss = new int[0];
+		boolean contains_ipv6_letters = Pattern.compile("[0-9a-f]+").matcher(
+				v.trim()).find();
+		boolean contains_other_letters = Pattern.compile("[^:0-9a-f]+")
+				.matcher(v.trim()).find();
+		// make sure of v must have only one "::" and no more than two of ":".
+		// e.g. 1::1::1 & 1:::1:205
+		if (!v.trim().isEmpty() && v.split(":{3,}").length == 1
+				&& v.split(":{2}").length <= 2 && !contains_other_letters
+				&& contains_ipv6_letters) {
+			String[] bs = v.split(":");
+			ss = new int[bs.length];
+			for (int i = 0; i < bs.length; i++) {
+				String s = bs[i].trim();
+				if (s.length() <= 4) // to avoid such number 0125f
+					ss[i] = Integer.parseInt(
+							(s.isEmpty() ? "0" : bs[i].trim()), 16);
+				else
+					raiseError("Unknown IPv6 Group " + i + " which is " + s);
+			}
+		}
+		// Check for make sure of the size of the IP groups in case "::" is used
+		// [> 2 & < 8]or not [must == 8]
+		if (contains_ipv6_letters
+				&& (!v.contains("::") && ss.length == 0 || ss.length == 8)
+				|| (v.contains("::") && ss.length > 2 && ss.length < 8)) {
+			write16Binary(ss, out);
+		} else {
+			raiseError("Unknown IP v6 number " + v);
 		}
 	}
 
@@ -216,7 +279,7 @@ EOS2
           "0"
         when :int32
           "0L"
-        when :string, :ip_number
+        when :string, :ip_number, :ipv6_number
           "\"\""
         else
           if $all_structs[types]
@@ -253,7 +316,7 @@ EOS2
           is_reference_type ? "Integer" : "int"
         when :int32
           is_reference_type ? "Long" : "long"
-        when :string, :ip_number
+        when :string, :ip_number, :ipv6_number
           "String"
         else
           if $all_structs[types]

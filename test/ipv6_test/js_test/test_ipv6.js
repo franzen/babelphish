@@ -1,17 +1,3 @@
-# Some notes on Javascript and numbers:
-# . The bitwise operators and shift operators operate on 32-bit ints.
-# . Note that all the positive and negative integers whose magnitude is no greater than 253 are representable in the Number type (indeed, the integer 0 has two representations, +0 and −0).
-# . They are 64-bit floating point values, the largest exact integral value is 2^53, or 9007199254740992 (-9007199254740992 to 9007199254740992)
-
-
-require 'pp'
-
-module Divine
-  $debug_javascript = false
-  
-  class JavascriptHelperMethods < BabelHelperMethods
-    def javascript_base_class_template_str
-      <<EOS
 // ------------------------------------------------------------ BabelDataReader
 function BabelDataReader(data) {
     this.data = data;
@@ -344,214 +330,28 @@ BabelHelper.prototype.decode_utf8 = function (utf8_data) {
 BabelHelper.prototype.raise_error = function (msg) {
     throw "[" + this.constructor.name + "] " + msg;
 }
-EOS
-    end
 
-    def javascript_class_template_str
-      <<EOS2
-// ------------------------------------------------------------ <%= c.name %>
-function <%= c.name %>() {
+
+// ------------------------------------------------------------ IPV6
+function IPV6() {
    BabelHelper.call(this);  
-<% c.fields.each do |f| %>
-   this.<%= f.name %> = <%= this.javascript_get_empty_declaration(f) %>;
-<% end %>
+   this.ip = "";
+   this.ipv6 = "";
 }
 
 // Inherit BabelHelper
-<%= c.name %>.prototype = new BabelHelper();
+IPV6.prototype = new BabelHelper();
  
 // Correct the constructor pointer because it points to BabelHelper
-<%= c.name %>.prototype.constructor = <%= c.name %>;
+IPV6.prototype.constructor = IPV6;
 
-// Define the methods of <%= c.name %>
-<%= c.name %>.prototype.deserialize = function (data) {
-<% c.simple_fields.each do |f| %>
-   this.<%= f.name %> = this.read_<%= f.type %>(data);
-<% end %>
-<% c.complex_fields.each do |f| %>
-<%= this.javascript_deserialize_complex f %>
-<% end %>
+// Define the methods of IPV6
+IPV6.prototype.deserialize = function (data) {
+   this.ip = this.read_ip_number(data);
+   this.ipv6 = this.read_ipv6_number(data);
 }
 
-<%= c.name %>.prototype.serialize_internal = function(out) {
-<% c.simple_fields.each do |f| %>
-   this.write_<%= f.type %>(this.<%= f.name %>, out);
-<% end %>
-<% c.complex_fields.each do |f| %>
-<%= this.javascript_serialize_complex f %>
-<% end %>
+IPV6.prototype.serialize_internal = function(out) {
+   this.write_ip_number(this.ip, out);
+   this.write_ipv6_number(this.ipv6, out);
 }
-EOS2
-    end
-
-    def javascript_get_empty_declaration(field)
-      case field.type
-      when :list, :binary, :short_binary
-        "[]"
-      when :map
-        "{}"
-      when :int8, :int16, :int32
-        "0"
-      when :string, :ip_number, :ipv6_number
-        "\"\""
-      else
-        raise "Unkown field type #{field.type}"
-      end
-    end
-
-    def javascript_serialize_complex(field)
-      types = field.referenced_types
-      as = [
-            "// Serialize #{field.type} '#{field.name}'",
-            $debug_javascript ? "console.log(\"Serialize '#{field.name}'\");" : nil,
-            javascript_serialize_internal("this.#{field.name}", types)
-           ]
-      format_src(4, 4, as)
-    end
-
-    def javascript_serialize_internal(var, types)
-      if types.respond_to? :first
-        case types.first
-        when :list
-          nv = get_fresh_variable_name
-          idx = get_fresh_variable_name
-          return [
-                  "this.write_int32(#{var}.length, out);",
-                  "for(var #{idx}=0; #{idx}<#{var}.length; #{idx}++) {",
-                  :indent,
-                  "var #{nv} = #{var}[#{idx}];",
-                  javascript_serialize_internal(nv, types[1]),
-                  :deindent,
-                  "}"
-                 ]
-        when :map
-          len = get_fresh_variable_name
-          nv1 = get_fresh_variable_name      
-          nv2 = get_fresh_variable_name
-          key = get_fresh_variable_name
-          return [
-                  "var #{len} = Object.keys(#{var}).length;",
-                  "this.write_int32(#{len}, out);",
-                  "for(var #{nv1} in #{var}) {",
-                  :indent,
-                  "var #{nv2} = #{var}[#{nv1}];",
-                  javascript_serialize_internal(nv1, types[1]),
-                  javascript_serialize_internal(nv2, types[2]),
-                  :deindent,
-                  "}"
-                 ]
-        else
-          raise "Missing serialization for #{var}"
-        end
-      else
-        if $all_structs[types]
-          "#{var}.serialize_internal(out)"
-      
-        elsif $available_types[types] && $available_types[types].ancestors.include?(SimpleDefinition)
-          "this.write_#{types}(#{var}, out)"
-      
-        else
-          raise "Missing code generation case #{types}"
-        end
-      end
-    end
-
-    def javascript_deserialize_complex(field)
-      types = field.referenced_types
-      as = [
-            "// Deserialize #{field.type} '#{field.name}'",
-            $debug_javascript ? "console.log(\"Deserialize '#{field.name}'\");" : nil,
-            javascript_deserialize_internal("this.#{field.name}", types)
-           ]
-      format_src(4, 4, as)
-    end
-
-    def javascript_deserialize_internal(var, types)
-      if types.respond_to? :first
-        case types.first
-        when :list
-          count = get_fresh_variable_name
-          nv = get_fresh_variable_name
-          iter = get_fresh_variable_name
-          return [
-                  "#{"var " unless var.include? "this."}#{var} = [];",
-                  "var #{count} = this.read_int32(data);",
-                  "for(var #{iter}=0; #{iter}<#{count}; #{iter}++) {",
-                  :indent,
-                  javascript_deserialize_internal(nv, types[1]),
-                  "#{var}.push(#{nv});",
-                  :deindent,
-                  "}"
-                 ]
-        when :map
-          count = get_fresh_variable_name
-          nv1 = get_fresh_variable_name      
-          nv2 = get_fresh_variable_name
-          iter = get_fresh_variable_name
-          return ["#{"var " unless var.include? "this."}#{var} = {};",
-                  "var #{count} = this.read_int32(data);",
-                  "for(var #{iter}=0; #{iter}<#{count}; #{iter}++) {",
-                  :indent,
-                  javascript_deserialize_internal(nv1, types[1]),
-                  javascript_deserialize_internal(nv2, types[2]),
-                  "#{var}[#{nv1}] = #{nv2};",
-                  :deindent,
-                  "}"
-                 ]
-        else
-          raise "Missing serialization for #{var}"
-        end
-      else
-        case types
-        when :map
-          "#{"var " unless var.include? "this."}#{var} = {}"
-        when :list
-          "#{"var " unless var.include? "this."}#{var} = []"
-        else
-          if $all_structs.key? types
-            [
-             "#{"var " unless var.include? "this."}#{var} = new #{types}();",
-             "#{var}.deserialize(data);"
-            ]
-          else
-            "#{"var " unless var.include? "this."}#{var} = this.read_#{types}(data);"
-          end
-        end
-      end
-    end
-  end
-    
-
-
-  class JavascriptGenerator < JavascriptHelperMethods
-    def generate_code(structs, opts)
-      pp opts
-      $debug_javascript = true if opts[:debug]
-      base_template = Erubis::Eruby.new(javascript_base_class_template_str)
-      class_template = Erubis::Eruby.new(javascript_class_template_str)
-      keys = structs.keys.sort
-      src = keys.map do |k|
-        ss = structs[k]
-        # TODO: Should we merge different versions and deduce deprecated methods, warn for incompatible changes, etc?
-        raise "Duplicate definitions of struct #{k}" if ss.size > 1
-        class_template.result( c: ss.first, this: self )
-      end
-    
-      # User defined super class?
-      toplevel = opts[:parent_class] || nil
-      toplevel = " < #{toplevel}" if toplevel 
-      return "#{javascript_get_begin_module(opts)}#{base_template.result({ toplevel_class: toplevel })}\n\n#{src.join("\n\n")}#{javascript_get_end_module(opts)}"
-    end
-  
-    def javascript_get_begin_module(opts)
-      nil
-    end
-
-    def javascript_get_end_module(opts)
-      nil
-    end
-  end
-
-
-  $language_generators[:javascript] = JavascriptGenerator.new
-end

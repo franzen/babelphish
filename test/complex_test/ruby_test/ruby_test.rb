@@ -5,7 +5,11 @@ class TestBabelTestBasic < MiniTest::Unit::TestCase
 
   def test_complex
     com_ser = buildObject
-    res = serialize_deserialize(com_ser)
+
+    #ser = com_ser.serialize
+    #serialize(ser)
+    res = deserialize()
+
     com_deser = BabelTest::Complex.new
     com_deser.deserialize res
     compare(com_ser, com_deser)
@@ -33,13 +37,15 @@ class TestBabelTestBasic < MiniTest::Unit::TestCase
     assert obj1.list1[0]["AA"][0].list1[2] == obj2.list1[0]["AA"][0].list1[2]
   end
 
-  def serialize_deserialize(obj)
-    data = obj.serialize
-    File.open("bin.babel", "w+b") do |f|
+  def serialize(data)
+    File.open("bin.babel.rb", "w+b") do |f|
       f.write(data)
     end
+  end
 
-    mem_buf = File.new('bin.babel').binmode
+  def deserialize()
+    puts 'bin.babel.java'
+    mem_buf = File.new('bin.babel.java').binmode
   end
 
 end
