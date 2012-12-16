@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.regex.Pattern;
 
 abstract class BabelBase <%= toplevel_class %> {
 	private static final Charset UTF8 = Charset.forName("UTF-8");
@@ -184,13 +185,13 @@ abstract class BabelBase <%= toplevel_class %> {
         
         protected void writeIpv6Number(String v, ByteArrayOutputStream out)
 			throws IOException {
-		v = v.replaceAll(" {1,}", "") + " "; // Temporary: To avoid the split problem when we have : at the
+		v = v.replaceAll(" ", "") + " "; // Temporary: To avoid the split problem when we have : at the
 					// end of "v"
 		int[] ss = new int[0];
 		boolean contains_ipv6_letters = Pattern.compile("[0-9a-f]+").matcher(
-				v.trim()).find();
+				v.trim().toLowerCase()).find();
 		boolean contains_other_letters = Pattern.compile("[^:0-9a-f]+")
-				.matcher(v.trim()).find();
+				.matcher(v.trim().toLowerCase()).find();
 		// make sure of v must have only one "::" and no more than two of ":".
 		// e.g. 1::1::1 & 1:::1:205
 		if (!v.trim().isEmpty() && v.split(":{3,}").length == 1

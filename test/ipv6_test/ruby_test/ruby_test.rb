@@ -10,7 +10,7 @@ class TestBabelTestBasic < MiniTest::Unit::TestCase
     # Should Success
     obj_ser.ipv6  = "ff:fabf:faf:f15f:f1ff:f2f:1f:f2"
     #obj_ser.ipv6 = "2001:db8::ff00:1:8329";
-    #obj_ser.ipv6 = "1::";
+    obj_ser.ipv6 = "F::";
     #obj_ser.ipv6 = "::1";
     #obj_ser.ipv6 = "";
     
@@ -36,7 +36,7 @@ class TestBabelTestBasic < MiniTest::Unit::TestCase
     puts obj_ser.ipv6
     puts obj_deser.ipv6
     assert obj_ser.ip == obj_deser.ip
-    assert obj_ser.ipv6 == obj_deser.ipv6
+    assert obj_ser.ipv6.downcase == obj_deser.ipv6
   end
 
   def serialize(data)

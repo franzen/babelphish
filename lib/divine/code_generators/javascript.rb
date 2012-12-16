@@ -108,16 +108,17 @@ BabelHelper.prototype.read_ip_number = function (data) {
 
 BabelHelper.prototype.read_ipv6_number = function (data) {
     var ip_array = this.read_short_binary(data);
-    ip = "";
+    var ip = "";
+    var part1, part2;
     for (i = 0, len = ip_array.length; i < len; i+=2) {
-        b1 = ip_array[i];
-        b2 = ip_array[i+1];
-        if (ip.length > 0) {
+        part1 = ip_array[i];
+        part2 = ip_array[i+1];
+        ip += part1 == 0? "" : part1.toString(16);
+        ip += (part1 == 0 && part2 == 0)? "" : (part2 < 10 && part1 != 0? "0" + part2.toString(16): part2.toString(16));
+        if (i < ip_array.length-2)
             ip += ":";
-        }
-        ip += b1.toString(16);
-        ip += b2.toString(16);
     }
+    ip = ip.replace(/:{3,}/g, "::");
     return ip;
 };
 
@@ -231,14 +232,28 @@ BabelHelper.prototype.write_ip_number = function (v, out) {
 
 BabelHelper.prototype.write_ipv6_number = function (v, out) {
     if ((v instanceof Array) || (v instanceof Uint8Array)) {
-        if (v.length != 8 && v.length != 0) this.raise_error("Unknown IP v6 number " + v);
         this.write_16_binary(v, out)
     } else if (v.constructor == String) {
         var ss = [];
-        if (v.length > 0) {
-            ss = v.split(":").map( function(t){ return parseInt(t, 16) } );
+        var contains_ipv6_letters  = /[0-9a-f]+/gi.test(v);
+        var contains_other_letters = /[^:0-9a-f]+/gi.test(v);
+        if (v.length > 0 && v.split(/:{3,}/g).length == 1 && v.split(/:{2}/g).length <= 2 && !contains_other_letters && 
+            contains_ipv6_letters) {
+            v = v.replace(/ /g, "");
+            ss = v.split(":").map(function (t){
+               if (t.length > 4)
+		 new BabelHelper().raise_error("Unknown IP Group number '" + t + "'");
+               if (t.length == 0)
+                 t = "0";
+               return parseInt(t, 16);
+            });
         }
-        this.write_ipv6_number(ss, out);
+        if ( ( !/::/g.test(v) && ss.length == 0 || ss.length == 8) || ( /::/g.test(v) && ss.length > 2 && ss.length < 8) ) {
+          this.write_ipv6_number(ss, out);
+        } else {
+          this.raise_error("Unknown IP v6 number '" + v + "'");
+        }
+
     } else {
         this.raise_error("Unknown IP v6 number '" + v + "'");
     }

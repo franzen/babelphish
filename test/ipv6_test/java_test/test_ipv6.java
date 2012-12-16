@@ -78,15 +78,15 @@ abstract class BabelBase  {
 		byte[] ips = readShortBinary(data);
 		String ip = "";
 		for (int i = 0; i < ips.length; i+=2) {
-			if (ip.length() > 0) {
+			int f   = ips[i] & 0xFF;
+			int l   = ips[i+1] & 0xFF;
+			ip += f == 0? "" : Integer.toHexString(f);
+			ip += (f == 0 && l == 0)? "" : (l < 10 && f != 0? "0" + Integer.toHexString(l): Integer.toHexString(l));
+			if (i < ips.length-2) {
 				ip += ":";
 			}
-			byte b1 = ips[i];
-			byte b2 = ips[i+1];
-			ip += Integer.toHexString(b1 & 0xFF);
-			ip += Integer.toHexString(b2 & 0xFF);
-			
 		}
+		ip = ip.replaceAll(":{3,}", "::");
 		return ip;
 	}
 
@@ -177,21 +177,42 @@ abstract class BabelBase  {
 		}
 	}
         
-        protected void writeIpv6Number(String v, ByteArrayOutputStream out) throws IOException {
+        protected void writeIpv6Number(String v, ByteArrayOutputStream out)
+			throws IOException {
+		v = v.replaceAll(" {1,}", "") + " "; // Temporary: To avoid the split problem when we have : at the
+					// end of "v"
 		int[] ss = new int[0];
-		if(!v.isEmpty()){
+		boolean contains_ipv6_letters = Pattern.compile("[0-9a-f]+").matcher(
+				v.trim().toLowerCase()).find();
+		boolean contains_other_letters = Pattern.compile("[^:0-9a-f]+")
+				.matcher(v.trim().toLowerCase()).find();
+		// make sure of v must have only one "::" and no more than two of ":".
+		// e.g. 1::1::1 & 1:::1:205
+		if (!v.trim().isEmpty() && v.split(":{3,}").length == 1
+				&& v.split(":{2}").length <= 2 && !contains_other_letters
+				&& contains_ipv6_letters) {
 			String[] bs = v.split(":");
 			ss = new int[bs.length];
 			for (int i = 0; i < bs.length; i++) {
-				ss[i] = (Integer.parseInt(bs[i],16));
+				String s = bs[i].trim();
+				if (s.length() <= 4) // to avoid such number 0125f
+					ss[i] = Integer.parseInt(
+							(s.isEmpty() ? "0" : bs[i].trim()), 16);
+				else
+					raiseError("Unknown IPv6 Group " + i + " which is " + s);
 			}
 		}
-		if (ss.length == 0 || ss.length == 8) {
+		// Check for make sure of the size of the IP groups in case "::" is used
+		// [> 2 & < 8]or not [must == 8]
+		if (contains_ipv6_letters
+				&& (!v.contains("::") && ss.length == 0 || ss.length == 8)
+				|| (v.contains("::") && ss.length > 2 && ss.length < 8)) {
 			write16Binary(ss, out);
 		} else {
-			raiseError("Unknown IP v6 number " + v); // Only IPv4 for now 
+			raiseError("Unknown IP v6 number " + v);
 		}
 	}
+
 	protected void raiseError(String msg) {
 		throw new IllegalArgumentException("[" + this.getClass().getCanonicalName() + "] " + msg);
 	}

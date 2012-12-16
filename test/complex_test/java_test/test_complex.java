@@ -74,6 +74,22 @@ abstract class BabelBase  {
 		return ip;
 	}
 
+	protected String readIpv6Number(ByteArrayInputStream data) throws IOException {
+		byte[] ips = readShortBinary(data);
+		String ip = "";
+		for (int i = 0; i < ips.length; i+=2) {
+			int f   = ips[i] & 0xFF;
+			int l   = ips[i+1] & 0xFF;
+			ip += f == 0? "" : Integer.toHexString(f);
+			ip += (f == 0 && l == 0)? "" : (l < 10 && f != 0? "0" + Integer.toHexString(l): Integer.toHexString(l));
+			if (i < ips.length-2) {
+				ip += ":";
+			}
+		}
+		ip = ip.replaceAll(":{3,}", "::");
+		return ip;
+	}
+
 	protected void writeInt8(int v, ByteArrayOutputStream out) {
 		if (v > 0xFF) { // Max 255
 			raiseError("Too large int8 number: " + v);
@@ -126,6 +142,17 @@ abstract class BabelBase  {
 		out.write(v);
 	}
 
+
+	protected void write16Binary(int[] v, ByteArrayOutputStream out) throws IOException {
+		if (v.length > 0xFF) {
+			raiseError("Too large 16_binary: " + (v.length*2) + " bytes");
+		}
+		writeInt8(v.length*2, out);
+		for(int i = 0; i < v.length; i++){
+			this.writeInt16(v[i], out);
+		}
+	}
+
 	protected void writeShortBinary(byte[] v, ByteArrayOutputStream out) throws IOException {
 		if (v.length > 0xFF) {
 			raiseError("Too large short_binary: " + v.length + " bytes");
@@ -147,6 +174,42 @@ abstract class BabelBase  {
 			writeShortBinary(ss, out);
 		} else {
 			raiseError("Unknown IP v4 number " + v); // Only IPv4 for now 
+		}
+	}
+        
+        protected void writeIpv6Number(String v, ByteArrayOutputStream out)
+			throws IOException {
+		v = v.replaceAll(" ", "") + " "; // Temporary: To avoid the split problem when we have : at the
+					// end of "v"
+		int[] ss = new int[0];
+		boolean contains_ipv6_letters = Pattern.compile("[0-9a-f]+").matcher(
+				v.trim().toLowerCase()).find();
+		boolean contains_other_letters = Pattern.compile("[^:0-9a-f]+")
+				.matcher(v.trim().toLowerCase()).find();
+		// make sure of v must have only one "::" and no more than two of ":".
+		// e.g. 1::1::1 & 1:::1:205
+		if (!v.trim().isEmpty() && v.split(":{3,}").length == 1
+				&& v.split(":{2}").length <= 2 && !contains_other_letters
+				&& contains_ipv6_letters) {
+			String[] bs = v.split(":");
+			ss = new int[bs.length];
+			for (int i = 0; i < bs.length; i++) {
+				String s = bs[i].trim();
+				if (s.length() <= 4) // to avoid such number 0125f
+					ss[i] = Integer.parseInt(
+							(s.isEmpty() ? "0" : bs[i].trim()), 16);
+				else
+					raiseError("Unknown IPv6 Group " + i + " which is " + s);
+			}
+		}
+		// Check for make sure of the size of the IP groups in case "::" is used
+		// [> 2 & < 8]or not [must == 8]
+		if (contains_ipv6_letters
+				&& (!v.contains("::") && ss.length == 0 || ss.length == 8)
+				|| (v.contains("::") && ss.length > 2 && ss.length < 8)) {
+			write16Binary(ss, out);
+		} else {
+			raiseError("Unknown IP v6 number " + v);
 		}
 	}
 
@@ -205,6 +268,7 @@ class Complex extends BabelBase {
 
 class IPList extends BabelBase {
 	public ArrayList<String> list1 = new ArrayList<String>();
+	public ArrayList<String> list2 = new ArrayList<String>();
 
 	@Override
 	void serializeInternal(ByteArrayOutputStream baos) throws IOException {
@@ -214,16 +278,29 @@ class IPList extends BabelBase {
 			String var_110 = list1.get(var_111);
 			writeIpNumber(var_110, baos);
 		}
+		// Serialize list 'list2'
+		writeInt32(list2.size(), baos);
+		for(int var_113=0; var_113<list2.size(); var_113++) {
+			String var_112 = list2.get(var_113);
+			writeIpv6Number(var_112, baos);
+		}
 	}
 
 	@Override
 	void deserialize(ByteArrayInputStream bais) throws IOException {
 		// Deserialize list 'list1'
 		this.list1 = new ArrayList<String>();
-		int var_112 = (int)this.readInt32(bais);
-		for(int var_114=0; var_114<var_112; var_114++) {
-			String var_113 = readIpNumber(bais);
-			this.list1.add(var_113);
+		int var_114 = (int)this.readInt32(bais);
+		for(int var_116=0; var_116<var_114; var_116++) {
+			String var_115 = readIpNumber(bais);
+			this.list1.add(var_115);
+		}
+		// Deserialize list 'list2'
+		this.list2 = new ArrayList<String>();
+		int var_117 = (int)this.readInt32(bais);
+		for(int var_119=0; var_119<var_117; var_119++) {
+			String var_118 = readIpv6Number(bais);
+			this.list2.add(var_118);
 		}
 	}
 }

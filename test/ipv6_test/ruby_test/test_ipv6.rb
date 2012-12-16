@@ -170,8 +170,8 @@ module BabelTest
       elsif v.is_a?(String)
         v = v.gsub(" ","") + " " # Temporary: To avoid the split problem when we have : at the end of "v" 
         raise_error "Unknown IPv6 number #{v}" unless v.strip.empty? ||
-                                                       v.strip.match("[^:0-9a-f]+") == nil &&  #Should not contains numbers or letters 0-9a-f
-                                                       v.strip.match("[0-9a-f]+") != nil &&   #Should contains numbers or letters 0-9a-f
+                                                       v.strip.match(/[^:0-9a-f]+/i) == nil &&  #Should not contains numbers or letters 0-9a-f
+                                                       v.strip.match(/[0-9a-f]+/i) != nil &&   #Should contains numbers or letters 0-9a-f
                                                        v.match(":{3,}") == nil && 
                                                        v.split("::").size <= 2
         ss = v.split(/:/).map do |s|

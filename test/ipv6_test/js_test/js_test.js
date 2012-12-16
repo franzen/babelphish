@@ -1,4 +1,4 @@
-eval(require('fs').readFileSync('./test_ipv6.js', 'utf8')); 
+eval(require('fs').readFileSync('./test_ipv6.js', 'utf8'));
 var fs = require('fs');
 var assert = require('assert');
 
@@ -15,7 +15,21 @@ compare(obj_ser, obj_deser);
 function buildObject(){
   var obj  = new IPV6();
   obj.ip   = "255.102.0.25";
-  obj.ipv6 = "ffff:fabf:faf:f15f:f1ff:f2f:1ff:1f2";
+// Should Success
+//  obj.ipv6 = "ff:fabf:faf:f15f:f1ff:f2f:1f:f2";
+//  obj.ipv6 = "2001:db8::ff00:1:8329";
+//  obj.ipv6 = "F::";
+//  obj.ipv6 = "1::";
+//  obj.ipv6 = "::1";
+//  obj.ipv6 = "";
+		    
+// Should Fail or raise error
+//  obj.ipv6 = "2001:0db8:0000:0000:0000:ff00:0042:8329";
+//  obj.ipv6 = "2001:db8:::ff00:42:8329";
+//  obj.ipv6 = "2001:db8::fff00:42:8329";
+//  obj.ipv6 = "2001:db8::fff00::42:8329";
+//  obj.ipv6 = "2001:db8:ff00:42:8329";
+//  obj.ipv6 = "::";
   return obj;
 }
 

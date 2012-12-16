@@ -47,6 +47,23 @@ module BabelTest
       read_short_binary(data).bytes.to_a.join('.')
     end
 
+    def read_ipv6_number(data)
+      ipv6 = []
+      read_short_binary(data).bytes.each_slice(2) do |t|
+        fst = t[0]
+        lst = t[1]
+        tmp = ""
+        tmp = fst.to_s 16 if fst != 0
+        if fst != 0 and lst < 10
+          tmp << "0#{lst.to_s 16}"
+        elsif fst != 0 and lst > 10 or fst == 0 and lst > 0
+          tmp << lst.to_s(16)
+        end
+        ipv6.push(tmp)
+      end
+      ipv6.join(':').gsub(/:{2,}/, "::")
+    end
+    
     ### Write methods ###
     def write_int8(v, out)
       v = v.to_i
@@ -103,6 +120,19 @@ module BabelTest
       end
     end
 
+    def write_16_binary(v, out)
+      if v.is_a?(Array)
+        raise_error "Too large 16 binary: #{v.size} (#{v.class.name})" unless v.size*2 < 0xFF
+        write_int8(v.size * 2, out) # IPv6 consists of 8 parts each of them has zise of 2 bytes
+        v.each do |x|
+          write_int16(x, out)
+        end
+      else 
+        raise_error "Unsupported binary 'nil'" if v == nil
+        raise_error "Unsupported binary of type '#{v.class.name}'"
+      end
+    end
+
     def write_short_binary(v, out)
       if v.is_a?(Array)
         raise_error "Too large short_binary: #{v.size} (#{v.class.name})" unless v.size < 0xFF
@@ -131,6 +161,30 @@ module BabelTest
         write_ip_number(ss, out)
       else
         raise_error "Unknown IP number '#{v}'"
+      end
+    end
+
+    def write_ipv6_number(v, out)
+      if v.is_a?(Array)
+        write_16_binary(v, out)
+      elsif v.is_a?(String)
+        v = v.gsub(" ","") + " " # Temporary: To avoid the split problem when we have : at the end of "v" 
+        raise_error "Unknown IPv6 number #{v}" unless v.strip.empty? ||
+                                                       v.strip.match(/[^:0-9a-f]+/i) == nil &&  #Should not contains numbers or letters 0-9a-f
+                                                       v.strip.match(/[0-9a-f]+/i) != nil &&   #Should contains numbers or letters 0-9a-f
+                                                       v.match(":{3,}") == nil && 
+                                                       v.split("::").size <= 2
+        ss = v.split(/:/).map do |s|
+          s = s.strip
+	  raise_error "Unknown IPv6 Group #{s}" unless s.size <= 4
+          s.to_i 16
+        end
+        ss = [] if v.strip.empty?
+        raise_error "Unknown IPv6 number #{v}" unless (!v.include?("::") && ss.size == 0 || ss.size == 8) || 
+						       (v.include?("::") && ss.size > 2 && ss.size < 8)
+	write_ipv6_number(ss, out)
+      else
+        raise_error "Unknown IPv6 number '#{v}'"
       end
     end
 
@@ -200,11 +254,12 @@ module BabelTest
 
 
   class IPList < BabelBase
-      attr_accessor :list1
+      attr_accessor :list1, :list2
 
       def initialize()
           super
           @list1 ||= []
+          @list2 ||= []
       end
 
       def serialize_internal(out)
@@ -214,16 +269,28 @@ module BabelTest
       list1.each do |var_10b|
          write_ip_number(var_10b, out)
       end
+        # Serialize list 'list2'
+      write_int32(list2.size, out)
+      list2.each do |var_10c|
+         write_ipv6_number(var_10c, out)
+      end
       end
 
       def deserialize(data)
         print "-"
         # Deserialize list 'list1'
       @list1 = []
-      var_10c = read_int32(data)
-      (1..var_10c).each do
-         var_10d = read_ip_number(data)
-         @list1 << var_10d
+      var_10d = read_int32(data)
+      (1..var_10d).each do
+         var_10e = read_ip_number(data)
+         @list1 << var_10e
+      end
+        # Deserialize list 'list2'
+      @list2 = []
+      var_10f = read_int32(data)
+      (1..var_10f).each do
+         var_110 = read_ipv6_number(data)
+         @list2 << var_110
       end
       end
   end

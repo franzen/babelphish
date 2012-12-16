@@ -92,6 +92,22 @@ BabelHelper.prototype.read_ip_number = function (data) {
     return ip;
 };
 
+BabelHelper.prototype.read_ipv6_number = function (data) {
+    var ip_array = this.read_short_binary(data);
+    var ip = "";
+    var part1, part2;
+    for (i = 0, len = ip_array.length; i < len; i+=2) {
+        part1 = ip_array[i];
+        part2 = ip_array[i+1];
+        ip += part1 == 0? "" : part1.toString(16);
+        ip += (part1 == 0 && part2 == 0)? "" : (part2 < 10 && part1 != 0? "0" + part2.toString(16): part2.toString(16));
+        if (i < ip_array.length-2)
+            ip += ":";
+    }
+    ip = ip.replace(/:{3,}/g, "::");
+    return ip;
+};
+
 BabelHelper.prototype.read_string = function (data) {
     return this.decode_utf8(data.read(this.read_int16(data)))
 };
@@ -154,6 +170,21 @@ BabelHelper.prototype.write_binary = function (v, out) {
     }
 }
 
+BabelHelper.prototype.write_16_binary = function (v, out) {
+    if ((v instanceof Array) || (v instanceof Uint8Array)) {
+        if (v.length > 0xFF) this.raise_error("Too large 16 binary: " + v.length*2 + " (" + v.constructor.name + ")");
+        this.write_int8(v.length * 2, out)
+        for (i = 0, len = v.length; i < len; i++) {
+	  this.write_int16(v[i], out);
+        }
+        
+    } else if (v == null) {
+        this.raise_error("Unsupported binary 'null'");
+    } else {
+        this.raise_error("Unsupported binary of type '" + v.constructor.name + "'");
+    }
+}
+
 BabelHelper.prototype.write_short_binary = function (v, out) {
     if ((v instanceof Array) || (v instanceof Uint8Array)) {
         if (v.length > 0xFF) this.raise_error("Too large binary: " + v.length + " (" + v.constructor.name + ")");
@@ -182,6 +213,35 @@ BabelHelper.prototype.write_ip_number = function (v, out) {
         this.write_ip_number(ss, out);
     } else {
         this.raise_error("Unknown IP number '" + v + "'");
+    }
+}
+
+BabelHelper.prototype.write_ipv6_number = function (v, out) {
+    if ((v instanceof Array) || (v instanceof Uint8Array)) {
+        this.write_16_binary(v, out)
+    } else if (v.constructor == String) {
+        var ss = [];
+        var contains_ipv6_letters  = /[0-9a-f]+/gi.test(v);
+        var contains_other_letters = /[^:0-9a-f]+/gi.test(v);
+        if (v.length > 0 && v.split(/:{3,}/g).length == 1 && v.split(/:{2}/g).length <= 2 && !contains_other_letters && 
+            contains_ipv6_letters) {
+            v = v.replace(/ /g, "");
+            ss = v.split(":").map(function (t){
+               if (t.length > 4)
+		 new BabelHelper().raise_error("Unknown IP Group number '" + t + "'");
+               if (t.length == 0)
+                 t = "0";
+               return parseInt(t, 16);
+            });
+        }
+        if ( ( !/::/g.test(v) && ss.length == 0 || ss.length == 8) || ( /::/g.test(v) && ss.length > 2 && ss.length < 8) ) {
+          this.write_ipv6_number(ss, out);
+        } else {
+          this.raise_error("Unknown IP v6 number '" + v + "'");
+        }
+
+    } else {
+        this.raise_error("Unknown IP v6 number '" + v + "'");
     }
 }
 
@@ -346,6 +406,7 @@ Complex.prototype.serialize_internal = function(out) {
 function IPList() {
    BabelHelper.call(this);  
    this.list1 = [];
+   this.list2 = [];
 }
 
 // Inherit BabelHelper
@@ -363,13 +424,26 @@ IPList.prototype.deserialize = function (data) {
         var var_113 = this.read_ip_number(data);
         this.list1.push(var_113);
     }
+    // Deserialize list 'list2'
+    this.list2 = [];
+    var var_115 = this.read_int32(data);
+    for(var var_117=0; var_117<var_115; var_117++) {
+        var var_116 = this.read_ipv6_number(data);
+        this.list2.push(var_116);
+    }
 }
 
 IPList.prototype.serialize_internal = function(out) {
     // Serialize list 'list1'
     this.write_int32(this.list1.length, out);
-    for(var var_116=0; var_116<this.list1.length; var_116++) {
-        var var_115 = this.list1[var_116];
-        this.write_ip_number(var_115, out)
+    for(var var_119=0; var_119<this.list1.length; var_119++) {
+        var var_118 = this.list1[var_119];
+        this.write_ip_number(var_118, out)
+    }
+    // Serialize list 'list2'
+    this.write_int32(this.list2.length, out);
+    for(var var_11b=0; var_11b<this.list2.length; var_11b++) {
+        var var_11a = this.list2[var_11b];
+        this.write_ipv6_number(var_11a, out)
     }
 }
