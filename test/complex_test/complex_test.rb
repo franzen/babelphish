@@ -3,7 +3,7 @@ require 'divine'
 
 struct 'IPList' do
   list :list1, :ip_number
-  list :list2, :ipv6_number
+  list :list2, :ip_number
 end
 
 struct 'Complex' do

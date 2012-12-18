@@ -4,6 +4,7 @@ require 'minitest/autorun'
 class TestBabelTestBasic < MiniTest::Unit::TestCase
 
   def test_BinaryTree
+    puts "Test Binary Tree"
     binaryTree_ser = buildTree
     res = serialize_deserialize(binaryTree_ser)
     binaryTree_deser = BabelTest::BinaryTree.new
@@ -52,11 +53,11 @@ class TestBabelTestBasic < MiniTest::Unit::TestCase
 
   def serialize_deserialize(obj)
     data = obj.serialize
-    File.open("bin.babel", "w+b") do |f|
+    File.open("bin.babel.rb", "w+b") do |f|
       f.write(data)
     end
 
-    mem_buf = File.new('bin.babel').binmode
+    mem_buf = File.new('bin.babel.rb').binmode
   end
 
 end

@@ -1,6 +1,8 @@
-eval(require('fs').readFileSync('./test_complex.js', 'utf8')); 
+eval(require('fs').readFileSync('test/complex_test/js_test/test_complex.js', 'utf8')); 
 var assert = require('assert');
 var fs = require('fs');
+
+console.log("Test Complex Data Structure");
 
 var com_ser = buildObject();
 

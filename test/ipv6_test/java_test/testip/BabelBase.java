@@ -1,10 +1,12 @@
+public package testip;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
+import java.nio.charset.Charset;
 
 abstract class BabelBase  {
 	private static final Charset UTF8 = Charset.forName("UTF-8");
@@ -232,92 +234,5 @@ abstract class BabelBase  {
 
 	protected void raiseError(String msg) {
 		throw new IllegalArgumentException("[" + this.getClass().getCanonicalName() + "] " + msg);
-	}
-}
-
-
-class Complex extends BabelBase {
-	public ArrayList<HashMap<String, ArrayList<IPList>>> list1 = new ArrayList<HashMap<String, ArrayList<IPList>>>();
-
-	@Override
-	void serializeInternal(ByteArrayOutputStream baos) throws IOException {
-		// Serialize list 'list1'
-		writeInt32(list1.size(), baos);
-		for(int var_101=0; var_101<list1.size(); var_101++) {
-			HashMap<String, ArrayList<IPList>> var_100 = list1.get(var_101);
-			writeInt32(var_100.size(), baos);
-			for(String var_102 : var_100.keySet()) {
-				ArrayList<IPList> var_103 = var_100.get(var_102);
-				writeString(var_102, baos);
-				writeInt32(var_103.size(), baos);
-				for(int var_105=0; var_105<var_103.size(); var_105++) {
-					IPList var_104 = var_103.get(var_105);
-					var_104.serializeInternal(baos);
-				}
-			}
-		}
-	}
-
-	@Override
-	void deserialize(ByteArrayInputStream bais) throws IOException {
-		// Deserialize list 'list1'
-		this.list1 = new ArrayList<HashMap<String, ArrayList<IPList>>>();
-		int var_106 = (int)this.readInt32(bais);
-		for(int var_108=0; var_108<var_106; var_108++) {
-			HashMap<String, ArrayList<IPList>> var_107 = new HashMap<String, ArrayList<IPList>>();
-			int var_109 = (int)readInt32(bais);
-			for(int var_10c=0; var_10c<var_109; var_10c++) {
-				String var_10a = readString(bais);
-				ArrayList<IPList> var_10b = new ArrayList<IPList>();
-				int var_10d = (int)this.readInt32(bais);
-				for(int var_10f=0; var_10f<var_10d; var_10f++) {
-					IPList var_10e = new IPList();
-					var_10e.deserialize(bais);
-					var_10b.add(var_10e);
-				}
-				var_107.put(var_10a, var_10b);
-			}
-			this.list1.add(var_107);
-		}
-	}
-}
-
-
-class IPList extends BabelBase {
-	public ArrayList<String> list1 = new ArrayList<String>();
-	public ArrayList<String> list2 = new ArrayList<String>();
-
-	@Override
-	void serializeInternal(ByteArrayOutputStream baos) throws IOException {
-		// Serialize list 'list1'
-		writeInt32(list1.size(), baos);
-		for(int var_111=0; var_111<list1.size(); var_111++) {
-			String var_110 = list1.get(var_111);
-			writeIpNumber(var_110, baos);
-		}
-		// Serialize list 'list2'
-		writeInt32(list2.size(), baos);
-		for(int var_113=0; var_113<list2.size(); var_113++) {
-			String var_112 = list2.get(var_113);
-			writeIpNumber(var_112, baos);
-		}
-	}
-
-	@Override
-	void deserialize(ByteArrayInputStream bais) throws IOException {
-		// Deserialize list 'list1'
-		this.list1 = new ArrayList<String>();
-		int var_114 = (int)this.readInt32(bais);
-		for(int var_116=0; var_116<var_114; var_116++) {
-			String var_115 = readIpNumber(bais);
-			this.list1.add(var_115);
-		}
-		// Deserialize list 'list2'
-		this.list2 = new ArrayList<String>();
-		int var_117 = (int)this.readInt32(bais);
-		for(int var_119=0; var_119<var_117; var_119++) {
-			String var_118 = readIpNumber(bais);
-			this.list2.add(var_118);
-		}
 	}
 }

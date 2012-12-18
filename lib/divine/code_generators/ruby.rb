@@ -46,12 +46,21 @@ module Divine
     end
 
     def read_ip_number(data)
-      read_short_binary(data).bytes.to_a.join('.')
+      ips = read_short_binary(data)
+      if ips.size == 4
+        read_ipv4_number(ips)
+      else
+        read_ipv6_number(ips)
+      end
     end
 
-    def read_ipv6_number(data)
+    def read_ipv4_number(ips)
+      ips.bytes.to_a.join('.')
+    end
+
+    def read_ipv6_number(ips)
       ipv6 = []
-      read_short_binary(data).bytes.each_slice(2) do |t|
+      ips.bytes.each_slice(2) do |t|
         fst = t[0]
         lst = t[1]
         tmp = ""
@@ -154,13 +163,31 @@ module Divine
 
     def write_ip_number(v, out)
       if v.is_a?(Array)
+        if v.size == 4
+          write_ipv4_number(v, out);
+        else
+          write_ipv6_number(v, out);
+        end
+      elsif v.is_a?(String)
+        if v.include?":"
+          write_ipv6_number(v, out);
+        else
+          write_ipv4_number(v, out);
+        end
+      else
+        raise_error "Unknown IP number '#{v}'"
+      end
+    end
+
+    def write_ipv4_number(v,out)
+      if v.is_a?(Array)
         raise_error "Unknown IP v4 number #{v}" unless v.size == 0 || v.size == 4 # Only IPv4 for now 
         write_short_binary(v, out)
       elsif v.is_a?(String)
         ss = v.split(/\./).map do |s|
           s.to_i
         end
-        write_ip_number(ss, out)
+        write_ipv4_number(ss, out)
       else
         raise_error "Unknown IP number '#{v}'"
       end
@@ -250,7 +277,7 @@ module Divine
         "{}"
       when :int8, :int16, :int32
         "0"
-      when :string, :ip_number, :ipv6_number
+      when :string, :ip_number
         "\"\""
       else
         raise "Unkown field type #{field.type}"
@@ -389,7 +416,7 @@ module Divine
       # User defined super class?
       toplevel = opts[:parent_class] || nil
       toplevel = " < #{toplevel}" if toplevel 
-      return "#{ruby_get_begin_module(opts)}#{base_template.result({ toplevel_class: toplevel })}\n\n#{src.join("\n\n")}#{ruby_get_end_module(opts)}"
+      return [{file: opts[:file], src: "#{ruby_get_begin_module(opts)}#{base_template.result({ toplevel_class: toplevel })}\n\n#{src.join("\n\n")}#{ruby_get_end_module(opts)}"}]
     end
   
     def ruby_get_begin_module(opts)

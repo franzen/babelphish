@@ -44,12 +44,21 @@ module BabelTest
     end
 
     def read_ip_number(data)
-      read_short_binary(data).bytes.to_a.join('.')
+      ips = read_short_binary(data)
+      if ips.size == 4
+        read_ipv4_number(ips)
+      else
+        read_ipv6_number(ips)
+      end
     end
 
-    def read_ipv6_number(data)
+    def read_ipv4_number(ips)
+      ips.bytes.to_a.join('.')
+    end
+
+    def read_ipv6_number(ips)
       ipv6 = []
-      read_short_binary(data).bytes.each_slice(2) do |t|
+      ips.bytes.each_slice(2) do |t|
         fst = t[0]
         lst = t[1]
         tmp = ""
@@ -152,13 +161,31 @@ module BabelTest
 
     def write_ip_number(v, out)
       if v.is_a?(Array)
+        if v.size == 4
+          write_ipv4_number(v, out);
+        else
+          write_ipv6_number(v, out);
+        end
+      elsif v.is_a?(String)
+        if v.include?":"
+          write_ipv6_number(v, out);
+        else
+          write_ipv4_number(v, out);
+        end
+      else
+        raise_error "Unknown IP number '#{v}'"
+      end
+    end
+
+    def write_ipv4_number(v,out)
+      if v.is_a?(Array)
         raise_error "Unknown IP v4 number #{v}" unless v.size == 0 || v.size == 4 # Only IPv4 for now 
         write_short_binary(v, out)
       elsif v.is_a?(String)
         ss = v.split(/\./).map do |s|
           s.to_i
         end
-        write_ip_number(ss, out)
+        write_ipv4_number(ss, out)
       else
         raise_error "Unknown IP number '#{v}'"
       end
@@ -204,24 +231,31 @@ module BabelTest
 
 
   class IPV6 < BabelBase
-      attr_accessor :ip, :ipv6
+      attr_accessor :list1
 
       def initialize()
           super
-          @ip ||= ""
-          @ipv6 ||= ""
+          @list1 ||= []
       end
 
       def serialize_internal(out)
         print "+"
-        write_ip_number(ip, out)
-        write_ipv6_number(ipv6, out)
+        # Serialize list 'list1'
+      write_int32(list1.size, out)
+      list1.each do |var_100|
+         write_ip_number(var_100, out)
+      end
       end
 
       def deserialize(data)
         print "-"
-        @ip = read_ip_number(data)
-        @ipv6 = read_ipv6_number(data)
+        # Deserialize list 'list1'
+      @list1 = []
+      var_101 = read_int32(data)
+      (1..var_101).each do
+         var_102 = read_ip_number(data)
+         @list1 << var_102
+      end
       end
   end
     

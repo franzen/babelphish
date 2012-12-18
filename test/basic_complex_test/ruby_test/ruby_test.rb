@@ -8,6 +8,7 @@ class TestBabelTestBasic < MiniTest::Unit::TestCase
   end
 
   def test_basic
+    puts "Basic Test"
     testbasic_ser = BabelTest::TestBasic.new
     testbasic_ser.i8 = 0x0F
     testbasic_ser.i16 = 0X1234
@@ -51,11 +52,11 @@ class TestBabelTestBasic < MiniTest::Unit::TestCase
 
   def serialize_deserialize(obj)
     data = obj.serialize
-    File.open("bin.babel", "w+b") do |f|
+    File.open("bin.babel.rb", "w+b") do |f|
       f.write(data)
     end
 
-    mem_buf = File.new('bin.babel').binmode
+    mem_buf = File.new('bin.babel.rb').binmode
   end
 
 end
