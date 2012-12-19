@@ -6,7 +6,11 @@ class TestBabelTestBasic < MiniTest::Unit::TestCase
   def test_BinaryTree
     puts "Test Binary Tree"
     binaryTree_ser = buildTree
-    res = serialize_deserialize(binaryTree_ser)
+    
+    ser = binaryTree_ser.serialize
+    serialize(ser)
+    res = deserialize()
+
     binaryTree_deser = BabelTest::BinaryTree.new
     binaryTree_deser.deserialize res
     compareBinaryTree(binaryTree_ser, binaryTree_deser)
@@ -51,13 +55,14 @@ class TestBabelTestBasic < MiniTest::Unit::TestCase
     assert bt1.root_node[0].next_node[0].next_node[0].i32 == bt2.root_node[0].next_node[0].next_node[0].i32
   end
 
-  def serialize_deserialize(obj)
-    data = obj.serialize
-    File.open("bin.babel.rb", "w+b") do |f|
+  def serialize(data)
+    File.open("test/binaryTree_test/ruby_test/bin.babel.rb", "w+b") do |f|
       f.write(data)
     end
+  end
 
-    mem_buf = File.new('bin.babel.rb').binmode
+  def deserialize()
+    mem_buf = File.new('test/binaryTree_test/ruby_test/bin.babel.rb').binmode
   end
 
 end

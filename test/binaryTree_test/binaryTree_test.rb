@@ -10,7 +10,7 @@ struct 'BinaryTree' do
   list :root_node, :Node   # List of root node of size equals to 1.
 end
 
-Divine::CodeGenerator.new.generate(:ruby, file: 'test_binaryTree.rb', module: 'BabelTest', parent_class: "Object")
-Divine::CodeGenerator.new.generate(:javascript, file: 'test_binaryTree.js')
-Divine::CodeGenerator.new.generate(:java, file: 'test_binaryTree.java')
+Divine::CodeGenerator.new.generate(:ruby, file: 'test_binaryTree.rb', module: 'BabelTest', parent_class: "Object", target_dir: 'test/binaryTree_test/ruby_test')
+Divine::CodeGenerator.new.generate(:javascript, file: 'test_binaryTree.js', target_dir: 'test/binaryTree_test/js_test')
+Divine::CodeGenerator.new.generate(:java, file: 'test_binaryTree.java', target_dir: 'test/binaryTree_test/java_test')
 

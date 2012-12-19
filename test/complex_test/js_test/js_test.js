@@ -6,8 +6,8 @@ console.log("Test Complex Data Structure");
 
 var com_ser = buildObject();
 
-//var ca = com_ser.serialize();
-//serialize(ca);
+var ca = com_ser.serialize();
+serialize(ca);
 var read = deserialize();
 
 var com_deser = new Complex();
@@ -53,7 +53,7 @@ function serialize(obj){
 }
 
 function deserialize(){
-  var file = __dirname +  '/bin.babel.java'
+  var file = __dirname +  '/bin.babel.js'
   var data = fs.readFileSync(file);
   data = toArray(data);
   return data;

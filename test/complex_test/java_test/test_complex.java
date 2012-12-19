@@ -1,10 +1,10 @@
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
+import java.nio.charset.Charset;
 
 abstract class BabelBase  {
 	private static final Charset UTF8 = Charset.forName("UTF-8");
@@ -259,7 +259,7 @@ class Complex extends BabelBase {
 	}
 
 	@Override
-	void deserialize(ByteArrayInputStream bais) throws IOException {
+	public void deserialize(ByteArrayInputStream bais) throws IOException {
 		// Deserialize list 'list1'
 		this.list1 = new ArrayList<HashMap<String, ArrayList<IPList>>>();
 		int var_106 = (int)this.readInt32(bais);
@@ -304,7 +304,7 @@ class IPList extends BabelBase {
 	}
 
 	@Override
-	void deserialize(ByteArrayInputStream bais) throws IOException {
+	public void deserialize(ByteArrayInputStream bais) throws IOException {
 		// Deserialize list 'list1'
 		this.list1 = new ArrayList<String>();
 		int var_114 = (int)this.readInt32(bais);

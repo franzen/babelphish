@@ -1,9 +1,9 @@
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -13,14 +13,15 @@ public class JavaTest {
 
 	@Test
 	public void testComplexTest() throws IOException {
-		Complex binartTree_ser = buildObject();
-		serialize(binartTree_ser);
+                System.out.println("Test Complex Data Structure");
+		Complex complex_ser = buildObject();
+		serialize(complex_ser);
 		byte[] read = deserialize();
 
-		Complex binartTree_deser = new Complex();
-		binartTree_deser.deserialize(new ByteArrayInputStream(read));
+		Complex complex_deser = new Complex();
+		complex_deser.deserialize(new ByteArrayInputStream(read));
 
-		compare(binartTree_ser, binartTree_deser);
+		compare(complex_ser, complex_deser);
 	}
 
 	public Complex buildObject() {
@@ -101,24 +102,25 @@ public class JavaTest {
 				.get(0), obj2.list1.get(1).get("BB").get(0).list2.get(0));
 	}
 
-	public void serialize(BabelBase obj) throws IOException{
-		byte[] res = obj.serialize();
-		Path file = FileSystems.getDefault().getPath("bin.babel.java");
-		Files.write(file, res);
-	}
-	
-	public byte[] deserialize() throws IOException {
-		Path file = FileSystems.getDefault().getPath("bin.babel.java");
-		byte[] res = Files.readAllBytes(file);
-		return res;
+	public void serialize(BabelBase obj) throws IOException {
+		byte[] data = obj.serialize();
+		File file = new File("test/complex_test/java_test/bin.babel");
+		try {
+		    new FileOutputStream(file).write(data);
+		} catch (Exception e) {
+		    e.printStackTrace();
+		}
 	}
 
-	public static junit.framework.Test suite() {
-		return new junit.framework.JUnit4TestAdapter(JavaTest.class);
-	}
-
-	public static void main(String args[]) {
-		org.junit.runner.JUnitCore.main("JavaTest");
+	public byte[] deserialize() throws IOException{
+		File file = new File("test/complex_test/java_test/bin.babel");
+		byte[] data = new byte[(int) file.length()];
+		try {
+		    new FileInputStream(file).read(data);
+		} catch (Exception e) {
+		    e.printStackTrace();
+		}
+		return data;
 	}
 
 }

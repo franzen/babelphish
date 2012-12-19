@@ -254,7 +254,7 @@ class <%= c.name %> extends BabelBase {
 	}
 
 	@Override
-	void deserialize(ByteArrayInputStream bais) throws IOException {
+	public void deserialize(ByteArrayInputStream bais) throws IOException {
 <% c.simple_fields.each do |f| %>
 		this.<%= f.name %> = <%= this.camelize("read", f.type) %>(bais);
 <% end %>
@@ -473,9 +473,9 @@ EOS2
       toplevel = opts[:parent_class] || nil
       toplevel = " extends #{toplevel}" if toplevel
       if opts[:package]
-        res = [{file: "BabelBase.java", src: "public #{java_get_begin_module(opts)}#{base_template.result({ toplevel_class: toplevel })}"}]
+        res = [{file: "BabelBase.java", src: "#{java_get_begin_module(opts)}public #{base_template.result({ toplevel_class: toplevel })}"}]
 	for cls in src
-          res << {file: cls.match(/class (.*) extends/)[1]+".java", src: "public #{java_get_begin_module(opts)}#{cls}"}
+          res << {file: cls.match(/class (.*) extends/)[1]+".java", src: "#{java_get_begin_module(opts)}public #{cls}"}
         end
         return res
       else

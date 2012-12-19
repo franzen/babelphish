@@ -30,13 +30,13 @@ class TestBabelTestBasic < MiniTest::Unit::TestCase
   end
 
   def serialize(data)
-    File.open("bin.babel.rb", "w+b") do |f|
+    File.open("test/ipv6_test/ruby_test/bin.babel.rb", "w+b") do |f|
       f.write(data)
     end
   end
 
   def deserialize()
-    mem_buf = File.new('bin.babel.rb').binmode
+    mem_buf = File.new('test/ipv6_test/ruby_test/bin.babel.rb').binmode
   end
 
 end

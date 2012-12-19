@@ -81,6 +81,14 @@ BabelHelper.prototype.read_short_binary = function (data) {
 
 BabelHelper.prototype.read_ip_number = function (data) {
     var ip_array = this.read_short_binary(data);
+    if(ip_array.length == 4){
+       return this.read_ipv4_number(ip_array);
+    }else{
+       return this.read_ipv6_number(ip_array);
+    }
+};
+
+BabelHelper.prototype.read_ipv4_number = function (ip_array) {
     ip = "";
     for (i = 0, len = ip_array.length; i < len; i++) {
         b = ip_array[i];
@@ -89,6 +97,20 @@ BabelHelper.prototype.read_ip_number = function (data) {
         }
         ip += b.toString();
     }
+    return ip;
+};
+BabelHelper.prototype.read_ipv6_number = function (ip_array) {
+    var ip = "";
+    var part1, part2;
+    for (i = 0, len = ip_array.length; i < len; i+=2) {
+        part1 = ip_array[i];
+        part2 = ip_array[i+1];
+        ip += part1 == 0? "" : part1.toString(16);
+        ip += (part1 == 0 && part2 == 0)? "" : (part2 < 10 && part1 != 0? "0" + part2.toString(16): part2.toString(16));
+        if (i < ip_array.length-2)
+            ip += ":";
+    }
+    ip = ip.replace(/:{3,}/g, "::");
     return ip;
 };
 
@@ -154,6 +176,21 @@ BabelHelper.prototype.write_binary = function (v, out) {
     }
 }
 
+BabelHelper.prototype.write_16_binary = function (v, out) {
+    if ((v instanceof Array) || (v instanceof Uint8Array)) {
+        if (v.length > 0xFF) this.raise_error("Too large 16 binary: " + v.length*2 + " (" + v.constructor.name + ")");
+        this.write_int8(v.length * 2, out)
+        for (i = 0, len = v.length; i < len; i++) {
+	  this.write_int16(v[i], out);
+        }
+        
+    } else if (v == null) {
+        this.raise_error("Unsupported binary 'null'");
+    } else {
+        this.raise_error("Unsupported binary of type '" + v.constructor.name + "'");
+    }
+}
+
 BabelHelper.prototype.write_short_binary = function (v, out) {
     if ((v instanceof Array) || (v instanceof Uint8Array)) {
         if (v.length > 0xFF) this.raise_error("Too large binary: " + v.length + " (" + v.constructor.name + ")");
@@ -171,6 +208,24 @@ BabelHelper.prototype.write_short_binary = function (v, out) {
 }
 
 BabelHelper.prototype.write_ip_number = function (v, out) {
+    if ((v instanceof Array) || (v instanceof Uint8Array)){
+      if(v.length == 4){
+         this.write_ipv4_number(v, out);
+      }else{
+         this.write_ipv6_number(v, out);
+      }
+    }else if(v.constructor == String){
+      if(/:/g.test(v)){
+         this.write_ipv6_number(v, out);
+      }else{
+         this.write_ipv4_number(v, out);
+      }
+    }else{
+      this.raise_error("Unknown IP number '" + v + "'");
+    }
+}
+
+BabelHelper.prototype.write_ipv4_number = function (v, out) {
     if ((v instanceof Array) || (v instanceof Uint8Array)) {
         if (v.length != 4 && v.length != 0) this.raise_error("Unknown IP v4 number " + v);
         this.write_short_binary(v, out)
@@ -179,9 +234,39 @@ BabelHelper.prototype.write_ip_number = function (v, out) {
         if (v.length > 0) {
             ss = v.split(".").map(Number);
         }
-        this.write_ip_number(ss, out);
+        this.write_ipv4_number(ss, out);
     } else {
         this.raise_error("Unknown IP number '" + v + "'");
+    }
+};
+
+BabelHelper.prototype.write_ipv6_number = function (v, out) {
+    if ((v instanceof Array) || (v instanceof Uint8Array)) {
+        this.write_16_binary(v, out)
+    } else if (v.constructor == String) {
+        var ss = [];
+        var contains_ipv6_letters  = /[0-9a-f]+/gi.test(v);
+        var contains_other_letters = /[^:0-9a-f]+/gi.test(v);
+        if (v.length > 0 && v.split(/:{3,}/g).length == 1 && v.split(/:{2}/g).length <= 2 && !contains_other_letters && 
+            contains_ipv6_letters) {
+            v = v.replace(/ /g, "");
+            ss = v.split(":").map(function (t){
+               if (t.length > 4)
+		 new BabelHelper().raise_error("Unknown IP Group number '" + t + "'");
+               if (t.length == 0)
+                 t = "0";
+               return parseInt(t, 16);
+            });
+        }
+        if (!contains_other_letters &&
+           ( !/::/g.test(v) && ss.length == 0 || ss.length == 8) || ( /::/g.test(v) && ss.length > 2 && ss.length < 8) ) {
+          this.write_ipv6_number(ss, out);
+        } else {
+          this.raise_error("Unknown IP v6 number '" + v + "'");
+        }
+
+    } else {
+        this.raise_error("Unknown IP v6 number '" + v + "'");
     }
 }
 

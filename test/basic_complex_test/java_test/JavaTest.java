@@ -1,30 +1,32 @@
+
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import org.junit.*;
 
-
-
 public class JavaTest {
 	
-	@Test
+    @Test
     public void testBasicTest() throws IOException {
+		System.out.println("Test Basic Test");
 		TestBasic testbasic_ser   = new TestBasic();
 		TestBasic testbasic_deser = new TestBasic();
+
 		testbasic_ser.i8   = 16;
 		testbasic_ser.i16  = 458;
 		testbasic_ser.i32  = 365248;
 		testbasic_ser.str  = "Testing String";
 		testbasic_ser.ip   = "";
 		
-		byte[] res = ser_deser(testbasic_ser);
-		
-		testbasic_deser.deserialize(new ByteArrayInputStream(res));
-		
+		serialize(testbasic_ser);
+		byte[] read = deserialize();
+		testbasic_deser.deserialize(new ByteArrayInputStream(read));    
+
 		org.junit.Assert.assertEquals(testbasic_ser.i8, testbasic_deser.i8);
 		org.junit.Assert.assertEquals(testbasic_ser.i16, testbasic_deser.i16);
 		org.junit.Assert.assertEquals(testbasic_ser.i32, testbasic_deser.i32);
@@ -32,7 +34,7 @@ public class JavaTest {
 		org.junit.Assert.assertEquals(testbasic_ser.ip, testbasic_deser.ip);
     }
 	
-	@Test
+    @Test
     public void testComplexTest() throws IOException {
 		TestComplex testcomplex_ser = new TestComplex();
 		TestComplex testcomplex_deser = new TestComplex();
@@ -55,8 +57,9 @@ public class JavaTest {
 		testcomplex_ser.map2.put("Key_1", tmp);
 		testcomplex_ser.map2.put("Key_2", tmp);
 		
-		byte[] res = ser_deser(testcomplex_ser);
-		testcomplex_deser.deserialize(new ByteArrayInputStream(res));
+		serialize(testcomplex_ser);
+		byte[] read = deserialize();
+		testcomplex_deser.deserialize(new ByteArrayInputStream(read)); 
 
 		org.junit.Assert.assertTrue (testcomplex_ser.list1.containsAll(testcomplex_deser.list1));
 		org.junit.Assert.assertTrue (testcomplex_ser.list2.containsAll(testcomplex_deser.list2));
@@ -69,20 +72,25 @@ public class JavaTest {
 		
     }
     
-	public byte[] ser_deser(BabelBase obj) throws IOException{
-		byte[] res = obj.serialize();
-		Path file = FileSystems.getDefault().getPath("bin.babel");
-		Files.write(file, res);
-		res = Files.readAllBytes(file);
-		return res;
+    	public void serialize(BabelBase obj) throws IOException {
+		byte[] data = obj.serialize();
+		File file = new File("test/basic_complex_test/java_test/bin.babel");
+		try {
+		    new FileOutputStream(file).write(data);
+		} catch (Exception e) {
+		    e.printStackTrace();
+		}
 	}
-	
-    public static junit.framework.Test suite() {
-        return new junit.framework.JUnit4TestAdapter(JavaTest.class);
-   }
-    
-    public static void main(String args[]) {
-		org.junit.runner.JUnitCore.main("JavaTest");
-    }
+
+	public byte[] deserialize() throws IOException{
+		File file = new File("test/basic_complex_test/java_test/bin.babel");
+		byte[] data = new byte[(int) file.length()];
+		try {
+		    new FileInputStream(file).read(data);
+		} catch (Exception e) {
+		    e.printStackTrace();
+		}
+		return data;
+	}
     
 }

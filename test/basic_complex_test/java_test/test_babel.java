@@ -236,27 +236,125 @@ abstract class BabelBase  {
 }
 
 
-class IPV6 extends BabelBase {
-	public ArrayList<String> list1 = new ArrayList<String>();
+class Entry extends BabelBase {
+
+	@Override
+	void serializeInternal(ByteArrayOutputStream baos) throws IOException {
+	}
+
+	@Override
+	public void deserialize(ByteArrayInputStream bais) throws IOException {
+	}
+}
+
+
+class TestBasic extends BabelBase {
+	public int i8 = 0;
+	public int i16 = 0;
+	public long i32 = 0L;
+	public String str = "";
+	public String ip = "";
+	public byte[] guid = new byte[0];
+
+	@Override
+	void serializeInternal(ByteArrayOutputStream baos) throws IOException {
+		writeInt8(this.i8, baos);
+		writeInt16(this.i16, baos);
+		writeInt32(this.i32, baos);
+		writeString(this.str, baos);
+		writeIpNumber(this.ip, baos);
+		writeBinary(this.guid, baos);
+	}
+
+	@Override
+	public void deserialize(ByteArrayInputStream bais) throws IOException {
+		this.i8 = readInt8(bais);
+		this.i16 = readInt16(bais);
+		this.i32 = readInt32(bais);
+		this.str = readString(bais);
+		this.ip = readIpNumber(bais);
+		this.guid = readBinary(bais);
+	}
+}
+
+
+class TestComplex extends BabelBase {
+	public ArrayList<Long> list1 = new ArrayList<Long>();
+	public ArrayList<Integer> list2 = new ArrayList<Integer>();
+	public HashMap<Integer, Long> map1 = new HashMap<Integer, Long>();
+	public HashMap<String, ArrayList<Entry>> map2 = new HashMap<String, ArrayList<Entry>>();
 
 	@Override
 	void serializeInternal(ByteArrayOutputStream baos) throws IOException {
 		// Serialize list 'list1'
 		writeInt32(list1.size(), baos);
 		for(int var_101=0; var_101<list1.size(); var_101++) {
-			String var_100 = list1.get(var_101);
-			writeIpNumber(var_100, baos);
+			long var_100 = list1.get(var_101);
+			writeInt32(var_100, baos);
+		}
+		// Serialize list 'list2'
+		writeInt32(list2.size(), baos);
+		for(int var_103=0; var_103<list2.size(); var_103++) {
+			int var_102 = list2.get(var_103);
+			writeInt8(var_102, baos);
+		}
+		// Serialize map 'map1'
+		writeInt32(map1.size(), baos);
+		for(int var_104 : map1.keySet()) {
+			long var_105 = map1.get(var_104);
+			writeInt8(var_104, baos);
+			writeInt32(var_105, baos);
+		}
+		// Serialize map 'map2'
+		writeInt32(map2.size(), baos);
+		for(String var_106 : map2.keySet()) {
+			ArrayList<Entry> var_107 = map2.get(var_106);
+			writeString(var_106, baos);
+			writeInt32(var_107.size(), baos);
+			for(int var_109=0; var_109<var_107.size(); var_109++) {
+				Entry var_108 = var_107.get(var_109);
+				var_108.serializeInternal(baos);
+			}
 		}
 	}
 
 	@Override
 	public void deserialize(ByteArrayInputStream bais) throws IOException {
 		// Deserialize list 'list1'
-		this.list1 = new ArrayList<String>();
-		int var_102 = (int)this.readInt32(bais);
-		for(int var_104=0; var_104<var_102; var_104++) {
-			String var_103 = readIpNumber(bais);
-			this.list1.add(var_103);
+		this.list1 = new ArrayList<Long>();
+		int var_10a = (int)this.readInt32(bais);
+		for(int var_10c=0; var_10c<var_10a; var_10c++) {
+			long var_10b = readInt32(bais);
+			this.list1.add(var_10b);
+		}
+		// Deserialize list 'list2'
+		this.list2 = new ArrayList<Integer>();
+		int var_10d = (int)this.readInt32(bais);
+		for(int var_10f=0; var_10f<var_10d; var_10f++) {
+			int var_10e = readInt8(bais);
+			this.list2.add(var_10e);
+		}
+		// Deserialize map 'map1'
+		this.map1 = new HashMap<Integer, Long>();
+		int var_110 = (int)readInt32(bais);
+		for(int var_113=0; var_113<var_110; var_113++) {
+			int var_111 = readInt8(bais);
+			long var_112 = readInt32(bais);
+			this.map1.put(var_111, var_112);
+		}
+		// Deserialize map 'map2'
+		this.map2 = new HashMap<String, ArrayList<Entry>>();
+		int var_114 = (int)readInt32(bais);
+		for(int var_117=0; var_117<var_114; var_117++) {
+			String var_115 = readString(bais);
+			ArrayList<Entry> var_116 = new ArrayList<Entry>();
+			int var_118 = (int)this.readInt32(bais);
+			for(int var_11a=0; var_11a<var_118; var_11a++) {
+				Entry var_119 = new Entry();
+				var_119.deserialize(bais);
+				var_116.add(var_119);
+			}
+			this.map2.put(var_115, var_116);
 		}
 	}
 }
