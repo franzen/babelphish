@@ -99,6 +99,8 @@ abstract class BabelBase <%= toplevel_class %> {
 	protected void writeInt8(int v, ByteArrayOutputStream out) {
 		if (v > 0xFF) { // Max 255
 			raiseError("Too large int8 number: " + v);
+		}else if(v < 0){
+			raiseError("a negative number passed  to int8 number: " + v);
 		}
 		out.write(v);
 	}
@@ -106,14 +108,18 @@ abstract class BabelBase <%= toplevel_class %> {
 	protected void writeInt16(int v, ByteArrayOutputStream out) {
 		if (v > 0xFFFF) { // Max 65.535 
 			raiseError("Too large int16 number: " + v);
+		}else if(v < 0){
+			raiseError("a negative number passed  to int16 number: " + v);
 		}
 		writeInt8(v >> 8 & 0xFF, out);
 		writeInt8(v & 0xFF, out);
 	}
 
 	protected void writeInt24(int v, ByteArrayOutputStream out) {
-		if (v > 0xFFFFFF) { // Max 16.777.215
+		if (v > 0xFFFFFF) { 	// Max 16.777.215
 			raiseError("Too large int24 number: " + v);
+		}else if(v < 0){	// In Case added to Java declaration
+			raiseError("a negative number passed  to int24 number: " + v);
 		}
 		writeInt8(v >> 16 & 0xFF, out);
 		writeInt16(v & 0xFFFF, out);
@@ -122,6 +128,8 @@ abstract class BabelBase <%= toplevel_class %> {
 	protected void writeInt32(long v, ByteArrayOutputStream out) {
 		if (v > 0xFFFFFFFFL) { // Max 4.294.967.295
 			raiseError("Too large int32 number: " + v);
+		}else if(v < 0){
+			raiseError("a negative number passed  to int32 number: " + v);
 		}
 		writeInt8((int) ((v >> 24) & 0xFF), out);
 		writeInt24((int) (v & 0xFFFFFF), out);

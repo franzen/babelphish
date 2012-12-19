@@ -134,33 +134,37 @@ BabelHelper.prototype.read_string = function (data) {
 
 BabelHelper.prototype.write_int8 = function (v, out) {
     if (v > 0xFF) // Max 255
-    this.raise_error("Too large int8 number: " + v);
+      this.raise_error("Too large int8 number: " + v);
+    if(v < 0)
+      this.raise_error("a negative number passed  to int8 number: " + v);
     out.writeByte(v);
 }
 
 BabelHelper.prototype.write_int16 = function (v, out) {
     if (v > 0xFFFF) // Max 65.535
-    this.raise_error("Too large int16 number: " + v);
+      this.raise_error("Too large int16 number: " + v);
+    if(v < 0)
+      this.raise_error("a negative number passed  to int16 number: " + v);
     this.write_int8(v >> 8 & 0xFF, out);
     this.write_int8(v & 0xFF, out);
 }
 
 BabelHelper.prototype.write_int24 = function (v, out) {
-    if (v > 0xFFFFFF) // Max 16.777.215
-    this.raise_error("Too large int24 number: " + v);
+    if (v > 0xFFFFFF) 	// Max 16.777.215
+      this.raise_error("Too large int24 number: " + v);
+    if (v < 0)		// In Case added to JavaScript declaration
+      this.raise_error("a negative number passed  to int24 number: " + v);
     this.write_int8(v >> 16 & 0xFF, out);
     this.write_int16(v & 0xFFFF, out);
 }
 
 BabelHelper.prototype.write_int32 = function (v, out) {
     if (v > 0xFFFFFFFF) // Max 4.294.967.295
-    this.raise_error("Too large int32 number: " + v);
+      this.raise_error("Too large int32 number: " + v);
+    if(v < 0)
+      this.raise_error("a negative number passed  to int32 number: " + v);
     this.write_int8(v >> 24 & 0xFF, out);
     this.write_int24(v & 0xFFFFFF, out);
-}
-
-BabelHelper.prototype.write_bool = function (v, out) {
-    this.write_int8(v ? 1 : 0, out)
 }
 
 BabelHelper.prototype.write_bool = function (v, out) {

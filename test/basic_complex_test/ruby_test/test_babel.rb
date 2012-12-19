@@ -77,12 +77,14 @@ module BabelTest
     def write_int8(v, out)
       v = v.to_i
       raise_error "Too large int8 number: #{v}" if v > 0xFF  # Max 255
+      raise_error "a negative number passed  to int8 number: #{v}" if v < 0
       out << v
     end
 
     def write_int16(v, out)
       v = v.to_i
       raise_error "Too large int16 number: #{v}" if v > 0xFFFF # Max 65.535 
+      raise_error "a negative number passed  to int16 number: #{v}" if v < 0
       write_int8( v >> 8 & 0xFF, out)
       write_int8( v & 0xFF, out)
     end
@@ -90,6 +92,7 @@ module BabelTest
     def write_int24(v, out)
       v = v.to_i
       raise_error "Too large int24 number: #{v}" if v > 0xFFFFFF # Max 16.777.215
+      raise_error "a negative number passed  to int24 number: #{v}" if v < 0 # In Case added to ruby declaration
       write_int8( v >> 16 & 0xFF, out)
       write_int16( v & 0xFFFF, out)
     end
@@ -97,6 +100,7 @@ module BabelTest
     def write_int32(v, out)
       v = v.to_i
       raise_error "Too large int32 number: #{v}" if v > 0xFFFFFFFF # Max 4.294.967.295
+      raise_error "a negative number passed  to int32 number: #{v}" if v < 0
       write_int8( v >> 24 & 0xFF, out)
       write_int24( v & 0xFFFFFF, out)
     end
