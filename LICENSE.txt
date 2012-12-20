@@ -1,4 +1,5 @@
-Copyright (c) 2012 Nils Franzen
+Copyright (c) 2012 Nils Franzen (https://github.com/franzen)
+Copyright (c) 2012 Ahmed H. Ali (https://github.com/Ahmedrali)
 Copyright (c) 2009-2010, Patrick Reiter Horn (Javascript UTF8 string encode/decode methods taken from the ProtoJS project)
 
 MIT License
