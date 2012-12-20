@@ -24,7 +24,11 @@ struct(:TestComplex) {
   }
 }
 
-Divine::CodeGenerator.new.generate(:ruby, file: 'test_babel.rb', module: 'BabelTest', parent_class: "Object", target_dir: 'test/basic_complex_test/ruby_test')
-Divine::CodeGenerator.new.generate(:javascript, file: 'test_babel.js', target_dir: 'test/basic_complex_test/js_test')
-Divine::CodeGenerator.new.generate(:java, file: 'test_babel.java', target_dir: 'test/basic_complex_test/java_test')
+if ARGV[0] == "ruby"
+  Divine::CodeGenerator.new.generate(:ruby, file: 'test_babel.rb', module: 'BabelTest', parent_class: "Object", target_dir: 'test/basic_complex_test/ruby_test')
+elsif ARGV[0] == "js"
+  Divine::CodeGenerator.new.generate(:javascript, file: 'test_babel.js', target_dir: 'test/basic_complex_test/js_test')
+elsif ARGV[0] == "java"
+  Divine::CodeGenerator.new.generate(:java, file: 'test_babel.java', target_dir: 'test/basic_complex_test/java_test')
+end
 

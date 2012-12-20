@@ -4,7 +4,6 @@ namespace :test  do
   
   desc "Run Ruby code test suite"
   task :ruby => :environment do
-    puts Divine::Version
     ruby "test/basic_complex_test/ruby_test/ruby_test.rb"
     ruby "test/binaryTree_test/ruby_test/ruby_test.rb"
     ruby "test/ipv6_test/ruby_test/ruby_test.rb"
@@ -39,10 +38,13 @@ namespace :test  do
 
   desc "Generate Source Code"
   task :environment do
-    ruby "test/basic_complex_test/basic_complex_test.rb"
-    ruby "test/ipv6_test/ipv6_test.rb"
-    ruby "test/complex_test/complex_test.rb"
-    ruby "test/binaryTree_test/binaryTree_test.rb"
+    puts "Divine Version #{Divine::VERSION}"
+    lang = Rake.application.top_level_tasks[0].match(/:(.*)/)[1]
+
+    ruby "test/basic_complex_test/basic_complex_test.rb #{lang}"
+    ruby "test/ipv6_test/ipv6_test.rb #{lang}"
+    ruby "test/complex_test/complex_test.rb #{lang}"
+    ruby "test/binaryTree_test/binaryTree_test.rb #{lang}"
   end
 end
 
