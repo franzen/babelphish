@@ -1,6 +1,12 @@
 module Divine
 
   class RubyHelperMethods < BabelHelperMethods
+    def get_header_comment
+      get_header_comment_text.map do |s|
+        "# #{s}"
+      end.join("\n")
+    end
+    
     def ruby_base_class_template_str
       %q{
   class BabelBase<%= toplevel_class %>
@@ -412,6 +418,9 @@ module Divine
       keys = structs.keys.sort
       src = keys.map do |k|
         ss = structs[k]
+        if ss.size > 1
+          sanity_check(ss)
+        end
         # TODO: Should we merge different versions and deduce deprecated methods, warn for incompatible changes, etc?
         raise "Duplicate definitions of struct #{k}" if ss.size > 1
         class_template.result( c: ss.first, this: self )
@@ -420,7 +429,7 @@ module Divine
       # User defined super class?
       toplevel = opts[:parent_class] || nil
       toplevel = " < #{toplevel}" if toplevel 
-      return [{file: opts[:file], src: "#{ruby_get_begin_module(opts)}#{base_template.result({ toplevel_class: toplevel })}\n\n#{src.join("\n\n")}#{ruby_get_end_module(opts)}"}]
+      return [{file: opts[:file], src: "#{get_header_comment}\n#{ruby_get_begin_module(opts)}#{base_template.result({ toplevel_class: toplevel, this: self })}\n\n#{src.join("\n\n")}#{ruby_get_end_module(opts)}"}]
     end
   
     def ruby_get_begin_module(opts)

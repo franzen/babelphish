@@ -19,7 +19,7 @@ module Divine
   class SimpleDefinition < StructDefinition
     def simple?; true; end
     def referenced_types
-      @type
+      [@type]
     end
   end
 
@@ -102,10 +102,10 @@ module Divine
     # Name = name of the struct
     # Version = struct version (not currently used)
     # Fields = All defined fields
-    attr_reader :name, :version, :fields
+    attr_reader :name, :properties, :fields
 
-    def initialize(name, version)
-      @version = version
+    def initialize(name, ps)
+      @properties = ps
       @name = name.to_sym
       @fields = []
       unless @name == :_inline_
@@ -115,21 +115,60 @@ module Divine
     end
 
     #
+    # Get the version of the struct 
+    #
+    def version
+      if properties && properties[:version]
+        properties[:version].to_i
+      else
+        1
+      end
+    end
+    
+    #
+    # Is the struct freezed? I.e. no changes are allowed
+    #
+    def freezed?
+      nil != freeze_signature
+    end
+    
+    #
+    # Get the freeze signature
+    #
+    def freeze_signature
+      if properties && properties[:freeze]
+        properties[:freeze]
+      else
+        nil
+      end
+    end
+
+    #
     # Get all simple fields, i.e. basic types like string, etc
     #
     def simple_fields
-        fields.select(&:simple?)
+      fields.select(&:simple?)
     end
 
     #
     # Get all complex fields, i.e. lists and hashmaps
     #
     def complex_fields
-        fields.reject(&:simple?)
+      fields.reject(&:simple?)
+    end
+
+    #
+    # Get named field
+    #
+    def get_field(name)
+      fields.each do |f|
+        return f if f.name == name
+      end
+      return nil
     end
 
     def method_missing(m, *args, &block)
-      puts "... #{m}"
+      puts "... #{m} #{args.inspect}"
       type = $available_types[m]
       if type
         if block_given?
