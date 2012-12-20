@@ -1,3 +1,4 @@
+
 module Divine
   $language_generators = {}
   
@@ -37,9 +38,11 @@ module Divine
       src = gen.generate_code($all_structs, opts)
       target_dir = getTargetDir(opts[:target_dir])
 
+      puts opts[:package]
       if opts[:package]
-        path = target_dir + opts[:package]
-        Dir.mkdir(path) unless File.exists?(path)
+        require 'fileutils'
+        path = target_dir + opts[:package].gsub(/\./, "/")
+        FileUtils.mkdir_p(path) unless File.exists?(path)
         for cls in src
            file_name = path+"/"+cls[:file]
            writeFile(file_name, cls[:src])
@@ -59,7 +62,7 @@ module Divine
       elsif dir && File.directory?(Dir.pwd + "/" + dir)
         return Dir.pwd + dir + "/"
       end
-      ""
+      return Dir.pwd
     end
     
     def writeFile(path, content)
