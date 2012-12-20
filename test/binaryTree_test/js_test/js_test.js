@@ -1,10 +1,14 @@
-eval(require('fs').readFileSync('./test_binaryTree.js', 'utf8')); 
+eval(require('fs').readFileSync('test/binaryTree_test/js_test/test_binaryTree.js', 'utf8')); 
 var assert = require('assert');
+var fs = require('fs');
+console.log("Test Binary Tree");
 
 var binaryTree_ser = buildTree();
 var ca = binaryTree_ser.serialize();
+serialize(ca);
+var read = deserialize();
 var binaryTree_deser = new BinaryTree();
-binaryTree_deser.deserialize(new BabelDataReader(ca));
+binaryTree_deser.deserialize(new BabelDataReader(read));
 compareBinaryTree(binaryTree_ser, binaryTree_deser);
 
 
@@ -46,4 +50,27 @@ function compareBinaryTree(bt1, bt2){
   assert.equal( bt1.root_node[0].next_node[0].next_node[0].i32, bt2.root_node[0].next_node[0].next_node[0].i32);
 }
 
+function serialize(obj){
+  var bBuffer = new Buffer(obj);
+  fs.writeFileSync(__dirname +  '/bin.babel.js', bBuffer, function (err) {
+    if (err) {
+      return console.log(err);
+    }
+  });
+}
+
+function deserialize(){
+  var data = fs.readFileSync(__dirname +  '/bin.babel.js');
+  data = toArray(data);
+  return data;
+  
+}
+
+function toArray(buffer) {
+    var view = new Uint8Array(buffer.length);
+    for (var i = 0; i < buffer.length; ++i) {
+        view[i] = buffer[i];
+    }
+    return view;
+}
 

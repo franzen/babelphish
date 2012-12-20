@@ -1,8 +1,9 @@
+
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -11,17 +12,20 @@ import org.junit.*;
 public class JavaTest {
 
 	@Test
-	public void testComplexTest() throws IOException {
-		BinaryTree binartTree_ser = buildTree();
-		byte[] res = ser_deser(binartTree_ser);
+	public void testBinaryTree() throws IOException {
+                System.out.println("Test Binary Tree");
+		BinaryTree binartTree_ser = buildObj();
+
+    		serialize(binartTree_ser);
+		byte[] read = deserialize();
 
 		BinaryTree binartTree_deser = new BinaryTree();
-		binartTree_deser.deserialize(new ByteArrayInputStream(res));
+		binartTree_deser.deserialize(new ByteArrayInputStream(read));
 
 		compareBinaryTree(binartTree_ser, binartTree_deser);
 	}
 
-	public BinaryTree buildTree() {
+	public BinaryTree buildObj() {
 		final Node root = new Node();
 		root.i32 = 0;
 
@@ -86,20 +90,25 @@ public class JavaTest {
 				bt2.root_node.get(0).next_node.get(0).next_node.get(0).i32);
 	}
 
-	public byte[] ser_deser(BabelBase obj) throws IOException {
-		byte[] res = obj.serialize();
-		Path file = FileSystems.getDefault().getPath("bin.babel");
-		Files.write(file, res);
-		res = Files.readAllBytes(file);
-		return res;
+	public void serialize(BabelBase obj) throws IOException {
+		byte[] data = obj.serialize();
+		File file = new File("test/binaryTree_test/java_test/bin.babel");
+		try {
+		    new FileOutputStream(file).write(data);
+		} catch (Exception e) {
+		    e.printStackTrace();
+		}
 	}
 
-	public static junit.framework.Test suite() {
-		return new junit.framework.JUnit4TestAdapter(JavaTest.class);
-	}
-
-	public static void main(String args[]) {
-		org.junit.runner.JUnitCore.main("JavaTest");
+	public byte[] deserialize() throws IOException{
+		File file = new File("test/binaryTree_test/java_test/bin.babel");
+		byte[] data = new byte[(int) file.length()];
+		try {
+		    new FileInputStream(file).read(data);
+		} catch (Exception e) {
+		    e.printStackTrace();
+		}
+		return data;
 	}
 
 }

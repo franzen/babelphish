@@ -8,6 +8,7 @@ class TestBabelTestBasic < MiniTest::Unit::TestCase
   end
 
   def test_basic
+    puts "Basic Test"
     testbasic_ser = BabelTest::TestBasic.new
     testbasic_ser.i8 = 0x0F
     testbasic_ser.i16 = 0X1234
@@ -16,7 +17,10 @@ class TestBabelTestBasic < MiniTest::Unit::TestCase
     testbasic_ser.ip = "192.168.0.1"
     testbasic_ser.guid = (300..302).to_s
     
-    res = serialize_deserialize(testbasic_ser)
+    ser = testbasic_ser.serialize
+    serialize(ser)
+    res = deserialize()
+
     testbasic_deser = BabelTest::TestBasic.new
     testbasic_deser.deserialize res
 
@@ -37,7 +41,10 @@ class TestBabelTestBasic < MiniTest::Unit::TestCase
     testcomplex_ser.map2["Hello_1"] = [BabelTest::Entry.new, BabelTest::Entry.new, BabelTest::Entry.new]
     testcomplex_ser.map2["Hello_2"] = [BabelTest::Entry.new, BabelTest::Entry.new]
     
-    res = serialize_deserialize(testcomplex_ser)
+    ser = testcomplex_ser.serialize
+    serialize(ser)
+    res = deserialize()
+
     testcomplex_deser = BabelTest::TestComplex.new
     testcomplex_deser.deserialize res
 
@@ -49,13 +56,13 @@ class TestBabelTestBasic < MiniTest::Unit::TestCase
     end
   end
 
-  def serialize_deserialize(obj)
-    data = obj.serialize
-    File.open("bin.babel", "w+b") do |f|
+  def serialize(data)
+    File.open("test/basic_complex_test/ruby_test/bin.babel.rb", "w+b") do |f|
       f.write(data)
     end
-
-    mem_buf = File.new('bin.babel').binmode
   end
 
+  def deserialize()
+    mem_buf = File.new('test/basic_complex_test/ruby_test/bin.babel.rb').binmode
+  end
 end

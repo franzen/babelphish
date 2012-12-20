@@ -81,6 +81,14 @@ BabelHelper.prototype.read_short_binary = function (data) {
 
 BabelHelper.prototype.read_ip_number = function (data) {
     var ip_array = this.read_short_binary(data);
+    if(ip_array.length == 4){
+       return this.read_ipv4_number(ip_array);
+    }else{
+       return this.read_ipv6_number(ip_array);
+    }
+};
+
+BabelHelper.prototype.read_ipv4_number = function (ip_array) {
     ip = "";
     for (i = 0, len = ip_array.length; i < len; i++) {
         b = ip_array[i];
@@ -91,9 +99,7 @@ BabelHelper.prototype.read_ip_number = function (data) {
     }
     return ip;
 };
-
-BabelHelper.prototype.read_ipv6_number = function (data) {
-    var ip_array = this.read_short_binary(data);
+BabelHelper.prototype.read_ipv6_number = function (ip_array) {
     var ip = "";
     var part1, part2;
     for (i = 0, len = ip_array.length; i < len; i+=2) {
@@ -114,33 +120,37 @@ BabelHelper.prototype.read_string = function (data) {
 
 BabelHelper.prototype.write_int8 = function (v, out) {
     if (v > 0xFF) // Max 255
-    this.raise_error("Too large int8 number: " + v);
+      this.raise_error("Too large int8 number: " + v);
+    if(v < 0)
+      this.raise_error("a negative number passed  to int8 number: " + v);
     out.writeByte(v);
 }
 
 BabelHelper.prototype.write_int16 = function (v, out) {
     if (v > 0xFFFF) // Max 65.535
-    this.raise_error("Too large int16 number: " + v);
+      this.raise_error("Too large int16 number: " + v);
+    if(v < 0)
+      this.raise_error("a negative number passed  to int16 number: " + v);
     this.write_int8(v >> 8 & 0xFF, out);
     this.write_int8(v & 0xFF, out);
 }
 
 BabelHelper.prototype.write_int24 = function (v, out) {
-    if (v > 0xFFFFFF) // Max 16.777.215
-    this.raise_error("Too large int24 number: " + v);
+    if (v > 0xFFFFFF) 	// Max 16.777.215
+      this.raise_error("Too large int24 number: " + v);
+    if (v < 0)		// In Case added to JavaScript declaration
+      this.raise_error("a negative number passed  to int24 number: " + v);
     this.write_int8(v >> 16 & 0xFF, out);
     this.write_int16(v & 0xFFFF, out);
 }
 
 BabelHelper.prototype.write_int32 = function (v, out) {
     if (v > 0xFFFFFFFF) // Max 4.294.967.295
-    this.raise_error("Too large int32 number: " + v);
+      this.raise_error("Too large int32 number: " + v);
+    if(v < 0)
+      this.raise_error("a negative number passed  to int32 number: " + v);
     this.write_int8(v >> 24 & 0xFF, out);
     this.write_int24(v & 0xFFFFFF, out);
-}
-
-BabelHelper.prototype.write_bool = function (v, out) {
-    this.write_int8(v ? 1 : 0, out)
 }
 
 BabelHelper.prototype.write_bool = function (v, out) {
@@ -202,6 +212,24 @@ BabelHelper.prototype.write_short_binary = function (v, out) {
 }
 
 BabelHelper.prototype.write_ip_number = function (v, out) {
+    if ((v instanceof Array) || (v instanceof Uint8Array)){
+      if(v.length == 4){
+         this.write_ipv4_number(v, out);
+      }else{
+         this.write_ipv6_number(v, out);
+      }
+    }else if(v.constructor == String){
+      if(/:/g.test(v)){
+         this.write_ipv6_number(v, out);
+      }else{
+         this.write_ipv4_number(v, out);
+      }
+    }else{
+      this.raise_error("Unknown IP number '" + v + "'");
+    }
+}
+
+BabelHelper.prototype.write_ipv4_number = function (v, out) {
     if ((v instanceof Array) || (v instanceof Uint8Array)) {
         if (v.length != 4 && v.length != 0) this.raise_error("Unknown IP v4 number " + v);
         this.write_short_binary(v, out)
@@ -210,11 +238,11 @@ BabelHelper.prototype.write_ip_number = function (v, out) {
         if (v.length > 0) {
             ss = v.split(".").map(Number);
         }
-        this.write_ip_number(ss, out);
+        this.write_ipv4_number(ss, out);
     } else {
         this.raise_error("Unknown IP number '" + v + "'");
     }
-}
+};
 
 BabelHelper.prototype.write_ipv6_number = function (v, out) {
     if ((v instanceof Array) || (v instanceof Uint8Array)) {
@@ -234,7 +262,8 @@ BabelHelper.prototype.write_ipv6_number = function (v, out) {
                return parseInt(t, 16);
             });
         }
-        if ( ( !/::/g.test(v) && ss.length == 0 || ss.length == 8) || ( /::/g.test(v) && ss.length > 2 && ss.length < 8) ) {
+        if (!contains_other_letters &&
+           ( !/::/g.test(v) && ss.length == 0 || ss.length == 8) || ( /::/g.test(v) && ss.length > 2 && ss.length < 8) ) {
           this.write_ipv6_number(ss, out);
         } else {
           this.raise_error("Unknown IP v6 number '" + v + "'");
@@ -350,8 +379,7 @@ BabelHelper.prototype.raise_error = function (msg) {
 // ------------------------------------------------------------ IPV6
 function IPV6() {
    BabelHelper.call(this);  
-   this.ip = "";
-   this.ipv6 = "";
+   this.list1 = [];
 }
 
 // Inherit BabelHelper
@@ -362,11 +390,20 @@ IPV6.prototype.constructor = IPV6;
 
 // Define the methods of IPV6
 IPV6.prototype.deserialize = function (data) {
-   this.ip = this.read_ip_number(data);
-   this.ipv6 = this.read_ipv6_number(data);
+    // Deserialize list 'list1'
+    this.list1 = [];
+    var var_100 = this.read_int32(data);
+    for(var var_102=0; var_102<var_100; var_102++) {
+        var var_101 = this.read_ip_number(data);
+        this.list1.push(var_101);
+    }
 }
 
 IPV6.prototype.serialize_internal = function(out) {
-   this.write_ip_number(this.ip, out);
-   this.write_ipv6_number(this.ipv6, out);
+    // Serialize list 'list1'
+    this.write_int32(this.list1.length, out);
+    for(var var_104=0; var_104<this.list1.length; var_104++) {
+        var var_103 = this.list1[var_104];
+        this.write_ip_number(var_103, out)
+    }
 }

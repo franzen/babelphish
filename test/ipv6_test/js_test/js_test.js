@@ -1,6 +1,8 @@
-eval(require('fs').readFileSync('./test_ipv6.js', 'utf8'));
+eval(require('fs').readFileSync('test/ipv6_test/js_test/test_ipv6.js', 'utf8'));
 var fs = require('fs');
 var assert = require('assert');
+
+console.log("Test IPv6");
 
 var obj_ser = buildObject();
 
@@ -10,34 +12,27 @@ var read = deserialize();
 
 var obj_deser = new IPV6();
 obj_deser.deserialize(new BabelDataReader(read));
-compare(obj_ser, obj_deser);
+compare_list(obj_ser.list1, obj_deser.list1);
 
 function buildObject(){
   var obj  = new IPV6();
-  obj.ip   = "255.102.0.25";
-// Should Success
-//  obj.ipv6 = "ff:fabf:faf:f15f:f1ff:f2f:1f:f2";
-//  obj.ipv6 = "2001:db8::ff00:1:8329";
-//  obj.ipv6 = "F::";
-//  obj.ipv6 = "1::";
-//  obj.ipv6 = "::1";
-//  obj.ipv6 = "";
+  obj.list1   = ["255.102.0.25","ff:fabf:faf:f15f:f1ff:f2f:1f:f2","2001:db8::ff00:1:8329","f::","::1",""]
 		    
 // Should Fail or raise error
-//  obj.ipv6 = "2001:0db8:0000:0000:0000:ff00:0042:8329";
-//  obj.ipv6 = "2001:db8:::ff00:42:8329";
-//  obj.ipv6 = "2001:db8::fff00:42:8329";
-//  obj.ipv6 = "2001:db8::fff00::42:8329";
-//  obj.ipv6 = "2001:db8:ff00:42:8329";
-//  obj.ipv6 = "::";
+//  obj.ip = "2001:0db8:0000:0000:0000:ff00:0042:8329";
+//  obj.ip = "2001:db8:::ff00:42:8329";
+//  obj.ip = "2001:db8::fff00:42:8329";
+//  obj.ip = "2001:db8::fff00::42:8329";
+//  obj.ip = "2001:db8:ff00:42:8329";
+//  obj.ip = "::";
   return obj;
 }
 
-function compare(obj1, obj2){
-  console.log(obj1.ipv6);
-  console.log(obj2.ipv6);
-  assert.equal(obj1.ip, obj2.ip);
-  assert.equal(obj1.ipv6, obj2.ipv6);
+function compare_list(lst_1, lst_2){
+  assert.equal(lst_1.length, lst_2.length)
+  for (var i = 0; i < lst_1.length; i++){
+    assert.equal(lst_1[i], lst_2[i]);
+  }
 }
 
 function serialize(obj){

@@ -1,9 +1,10 @@
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.regex.Pattern;
+import java.nio.charset.Charset;
 
 abstract class BabelBase  {
 	private static final Charset UTF8 = Charset.forName("UTF-8");
@@ -63,7 +64,15 @@ abstract class BabelBase  {
 	}
 
 	protected String readIpNumber(ByteArrayInputStream data) throws IOException {
-		byte[] ips = readShortBinary(data);
+		byte[] ips = readShortBinary(data);		
+		if(ips.length == 4){
+			return readIpv4Number(ips);
+		} else{
+			return readIpv6Number(ips);
+		}
+	}
+
+	protected String readIpv4Number(byte[] ips){
 		String ip = "";
 		for (byte b : ips) {
 			if (ip.length() > 0) {
@@ -74,9 +83,27 @@ abstract class BabelBase  {
 		return ip;
 	}
 
+	protected String readIpv6Number(byte[] ips) throws IOException {
+		String ip = "";
+                int part1, part2;
+		for (int i = 0; i < ips.length; i+=2) {
+			part1   = ips[i] & 0xFF;
+			part2   = ips[i+1] & 0xFF;
+			ip += part1 == 0? "" : Integer.toHexString(part1);
+			ip += (part1 == 0 && part2 == 0)? "" : (part2 < 10 && part1 != 0? "0" + Integer.toHexString(part2): Integer.toHexString(part2));
+			if (i < ips.length-2) {
+				ip += ":";
+			}
+		}
+		ip = ip.replaceAll(":{3,}", "::");
+		return ip;
+	}
+
 	protected void writeInt8(int v, ByteArrayOutputStream out) {
 		if (v > 0xFF) { // Max 255
 			raiseError("Too large int8 number: " + v);
+		}else if(v < 0){
+			raiseError("a negative number passed  to int8 number: " + v);
 		}
 		out.write(v);
 	}
@@ -84,14 +111,18 @@ abstract class BabelBase  {
 	protected void writeInt16(int v, ByteArrayOutputStream out) {
 		if (v > 0xFFFF) { // Max 65.535 
 			raiseError("Too large int16 number: " + v);
+		}else if(v < 0){
+			raiseError("a negative number passed  to int16 number: " + v);
 		}
 		writeInt8(v >> 8 & 0xFF, out);
 		writeInt8(v & 0xFF, out);
 	}
 
 	protected void writeInt24(int v, ByteArrayOutputStream out) {
-		if (v > 0xFFFFFF) { // Max 16.777.215
+		if (v > 0xFFFFFF) { 	// Max 16.777.215
 			raiseError("Too large int24 number: " + v);
+		}else if(v < 0){	// In Case added to Java declaration
+			raiseError("a negative number passed  to int24 number: " + v);
 		}
 		writeInt8(v >> 16 & 0xFF, out);
 		writeInt16(v & 0xFFFF, out);
@@ -100,6 +131,8 @@ abstract class BabelBase  {
 	protected void writeInt32(long v, ByteArrayOutputStream out) {
 		if (v > 0xFFFFFFFFL) { // Max 4.294.967.295
 			raiseError("Too large int32 number: " + v);
+		}else if(v < 0){
+			raiseError("a negative number passed  to int32 number: " + v);
 		}
 		writeInt8((int) ((v >> 24) & 0xFF), out);
 		writeInt24((int) (v & 0xFFFFFF), out);
@@ -126,6 +159,17 @@ abstract class BabelBase  {
 		out.write(v);
 	}
 
+
+	protected void write16Binary(int[] v, ByteArrayOutputStream out) throws IOException {
+		if (v.length > 0xFF) {
+			raiseError("Too large 16_binary: " + (v.length*2) + " bytes");
+		}
+		writeInt8(v.length*2, out);
+		for(int i = 0; i < v.length; i++){
+			this.writeInt16(v[i], out);
+		}
+	}
+
 	protected void writeShortBinary(byte[] v, ByteArrayOutputStream out) throws IOException {
 		if (v.length > 0xFF) {
 			raiseError("Too large short_binary: " + v.length + " bytes");
@@ -135,6 +179,14 @@ abstract class BabelBase  {
 	}
 
 	protected void writeIpNumber(String v, ByteArrayOutputStream out) throws IOException {
+		if(v.contains(":")){
+			writeIpv6Number( v, out);
+		}else{
+			writeIpv4Number( v, out);
+    		}
+	}
+        
+        protected void writeIpv4Number(String v, ByteArrayOutputStream out) throws IOException {
 		byte[] ss = new byte[0];
 		if(!v.isEmpty()){
 			String[] bs = v.split("\\.");
@@ -147,6 +199,42 @@ abstract class BabelBase  {
 			writeShortBinary(ss, out);
 		} else {
 			raiseError("Unknown IP v4 number " + v); // Only IPv4 for now 
+		}
+	}
+
+        protected void writeIpv6Number(String v, ByteArrayOutputStream out)
+			throws IOException {
+		v = v.replaceAll(" ", "") + " "; // Temporary: To avoid the split problem when we have : at the
+					// end of "v"
+		int[] ss = new int[0];
+		boolean contains_ipv6_letters = Pattern.compile("[0-9a-f]+").matcher(
+				v.trim().toLowerCase()).find();
+		boolean contains_other_letters = Pattern.compile("[^:0-9a-f]+")
+				.matcher(v.trim().toLowerCase()).find();
+		// make sure of v must have only one "::" and no more than two of ":".
+		// e.g. 1::1::1 & 1:::1:205
+		if (!v.trim().isEmpty() && v.split(":{3,}").length == 1
+				&& v.split(":{2}").length <= 2 && !contains_other_letters
+				&& contains_ipv6_letters) {
+			String[] bs = v.split(":");
+			ss = new int[bs.length];
+			for (int i = 0; i < bs.length; i++) {
+				String s = bs[i].trim();
+				if (s.length() <= 4) // to avoid such number 0125f
+					ss[i] = Integer.parseInt(
+							(s.isEmpty() ? "0" : bs[i].trim()), 16);
+				else
+					raiseError("Unknown IPv6 Group " + i + " which is " + s);
+			}
+		}
+		// Check for make sure of the size of the IP groups in case "::" is used
+		// [> 2 & < 8]or not [must == 8]
+		if (!contains_other_letters
+				&& (!v.contains("::") && ss.length == 0 || ss.length == 8)
+				|| (v.contains("::") && ss.length > 2 && ss.length < 8)) {
+			write16Binary(ss, out);
+		} else {
+			raiseError("Unknown IP v6 number " + v);
 		}
 	}
 
@@ -163,7 +251,7 @@ class Entry extends BabelBase {
 	}
 
 	@Override
-	void deserialize(ByteArrayInputStream bais) throws IOException {
+	public void deserialize(ByteArrayInputStream bais) throws IOException {
 	}
 }
 
@@ -187,7 +275,7 @@ class TestBasic extends BabelBase {
 	}
 
 	@Override
-	void deserialize(ByteArrayInputStream bais) throws IOException {
+	public void deserialize(ByteArrayInputStream bais) throws IOException {
 		this.i8 = readInt8(bais);
 		this.i16 = readInt16(bais);
 		this.i32 = readInt32(bais);
@@ -239,7 +327,7 @@ class TestComplex extends BabelBase {
 	}
 
 	@Override
-	void deserialize(ByteArrayInputStream bais) throws IOException {
+	public void deserialize(ByteArrayInputStream bais) throws IOException {
 		// Deserialize list 'list1'
 		this.list1 = new ArrayList<Long>();
 		int var_10a = (int)this.readInt32(bais);

@@ -44,19 +44,47 @@ module BabelTest
     end
 
     def read_ip_number(data)
-      read_short_binary(data).bytes.to_a.join('.')
+      ips = read_short_binary(data)
+      if ips.size == 4
+        read_ipv4_number(ips)
+      else
+        read_ipv6_number(ips)
+      end
     end
 
+    def read_ipv4_number(ips)
+      ips.bytes.to_a.join('.')
+    end
+
+    def read_ipv6_number(ips)
+      ipv6 = []
+      ips.bytes.each_slice(2) do |t|
+        fst = t[0]
+        lst = t[1]
+        tmp = ""
+        tmp = fst.to_s 16 if fst != 0
+        if fst != 0 and lst < 10
+          tmp << "0#{lst.to_s 16}"
+        elsif fst != 0 and lst > 10 or fst == 0 and lst > 0
+          tmp << lst.to_s(16)
+        end
+        ipv6.push(tmp)
+      end
+      ipv6.join(':').gsub(/:{2,}/, "::")
+    end
+    
     ### Write methods ###
     def write_int8(v, out)
       v = v.to_i
       raise_error "Too large int8 number: #{v}" if v > 0xFF  # Max 255
+      raise_error "a negative number passed  to int8 number: #{v}" if v < 0
       out << v
     end
 
     def write_int16(v, out)
       v = v.to_i
       raise_error "Too large int16 number: #{v}" if v > 0xFFFF # Max 65.535 
+      raise_error "a negative number passed  to int16 number: #{v}" if v < 0
       write_int8( v >> 8 & 0xFF, out)
       write_int8( v & 0xFF, out)
     end
@@ -64,6 +92,7 @@ module BabelTest
     def write_int24(v, out)
       v = v.to_i
       raise_error "Too large int24 number: #{v}" if v > 0xFFFFFF # Max 16.777.215
+      raise_error "a negative number passed  to int24 number: #{v}" if v < 0 # In Case added to ruby declaration
       write_int8( v >> 16 & 0xFF, out)
       write_int16( v & 0xFFFF, out)
     end
@@ -71,6 +100,7 @@ module BabelTest
     def write_int32(v, out)
       v = v.to_i
       raise_error "Too large int32 number: #{v}" if v > 0xFFFFFFFF # Max 4.294.967.295
+      raise_error "a negative number passed  to int32 number: #{v}" if v < 0
       write_int8( v >> 24 & 0xFF, out)
       write_int24( v & 0xFFFFFF, out)
     end
@@ -103,6 +133,19 @@ module BabelTest
       end
     end
 
+    def write_16_binary(v, out)
+      if v.is_a?(Array)
+        raise_error "Too large 16 binary: #{v.size} (#{v.class.name})" unless v.size*2 < 0xFF
+        write_int8(v.size * 2, out) # IPv6 consists of 8 parts each of them has zise of 2 bytes
+        v.each do |x|
+          write_int16(x, out)
+        end
+      else 
+        raise_error "Unsupported binary 'nil'" if v == nil
+        raise_error "Unsupported binary of type '#{v.class.name}'"
+      end
+    end
+
     def write_short_binary(v, out)
       if v.is_a?(Array)
         raise_error "Too large short_binary: #{v.size} (#{v.class.name})" unless v.size < 0xFF
@@ -122,15 +165,57 @@ module BabelTest
 
     def write_ip_number(v, out)
       if v.is_a?(Array)
+        if v.size == 4
+          write_ipv4_number(v, out);
+        else
+          write_ipv6_number(v, out);
+        end
+      elsif v.is_a?(String)
+        if v.include?":"
+          write_ipv6_number(v, out);
+        else
+          write_ipv4_number(v, out);
+        end
+      else
+        raise_error "Unknown IP number '#{v}'"
+      end
+    end
+
+    def write_ipv4_number(v,out)
+      if v.is_a?(Array)
         raise_error "Unknown IP v4 number #{v}" unless v.size == 0 || v.size == 4 # Only IPv4 for now 
         write_short_binary(v, out)
       elsif v.is_a?(String)
         ss = v.split(/\./).map do |s|
           s.to_i
         end
-        write_ip_number(ss, out)
+        write_ipv4_number(ss, out)
       else
         raise_error "Unknown IP number '#{v}'"
+      end
+    end
+
+    def write_ipv6_number(v, out)
+      if v.is_a?(Array)
+        write_16_binary(v, out)
+      elsif v.is_a?(String)
+        v = v.gsub(" ","") + " " # Temporary: To avoid the split problem when we have : at the end of "v" 
+        raise_error "Unknown IPv6 number #{v}" unless v.strip.empty? ||
+                                                       v.strip.match(/[^:0-9a-f]+/i) == nil &&  #Should not contains numbers or letters 0-9a-f
+                                                       v.strip.match(/[0-9a-f]+/i) != nil &&   #Should contains numbers or letters 0-9a-f
+                                                       v.match(":{3,}") == nil && 
+                                                       v.split("::").size <= 2
+        ss = v.split(/:/).map do |s|
+          s = s.strip
+	  raise_error "Unknown IPv6 Group #{s}" unless s.size <= 4
+          s.to_i 16
+        end
+        ss = [] if v.strip.empty?
+        raise_error "Unknown IPv6 number #{v}" unless (!v.include?("::") && ss.size == 0 || ss.size == 8) || 
+						       (v.include?("::") && ss.size > 2 && ss.size < 8)
+	write_ipv6_number(ss, out)
+      else
+        raise_error "Unknown IPv6 number '#{v}'"
       end
     end
 

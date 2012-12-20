@@ -4,10 +4,11 @@ require 'minitest/autorun'
 class TestBabelTestBasic < MiniTest::Unit::TestCase
 
   def test_complex
+    puts "Test Complex Data Structure"
     com_ser = buildObject
 
-    #ser = com_ser.serialize
-    #serialize(ser)
+    ser = com_ser.serialize
+    serialize(ser)
     res = deserialize()
 
     com_deser = BabelTest::Complex.new
@@ -42,13 +43,13 @@ class TestBabelTestBasic < MiniTest::Unit::TestCase
   end
 
   def serialize(data)
-    File.open("bin.babel.rb", "w+b") do |f|
+    File.open("test/complex_test/ruby_test/bin.babel.rb", "w+b") do |f|
       f.write(data)
     end
   end
 
   def deserialize()
-    mem_buf = File.new('bin.babel.java').binmode
+    mem_buf = File.new('test/complex_test/ruby_test/bin.babel.rb').binmode
   end
 
 end

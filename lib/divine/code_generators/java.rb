@@ -3,14 +3,6 @@ module Divine
   class JavaHelperMethods < BabelHelperMethods
     def java_base_class_template_str
       <<EOS
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.regex.Pattern;
-
 abstract class BabelBase <%= toplevel_class %> {
 	private static final Charset UTF8 = Charset.forName("UTF-8");
 
@@ -69,7 +61,15 @@ abstract class BabelBase <%= toplevel_class %> {
 	}
 
 	protected String readIpNumber(ByteArrayInputStream data) throws IOException {
-		byte[] ips = readShortBinary(data);
+		byte[] ips = readShortBinary(data);		
+		if(ips.length == 4){
+			return readIpv4Number(ips);
+		} else{
+			return readIpv6Number(ips);
+		}
+	}
+
+	protected String readIpv4Number(byte[] ips){
 		String ip = "";
 		for (byte b : ips) {
 			if (ip.length() > 0) {
@@ -80,14 +80,14 @@ abstract class BabelBase <%= toplevel_class %> {
 		return ip;
 	}
 
-	protected String readIpv6Number(ByteArrayInputStream data) throws IOException {
-		byte[] ips = readShortBinary(data);
+	protected String readIpv6Number(byte[] ips) throws IOException {
 		String ip = "";
+                int part1, part2;
 		for (int i = 0; i < ips.length; i+=2) {
-			int f   = ips[i] & 0xFF;
-			int l   = ips[i+1] & 0xFF;
-			ip += f == 0? "" : Integer.toHexString(f);
-			ip += (f == 0 && l == 0)? "" : (l < 10 && f != 0? "0" + Integer.toHexString(l): Integer.toHexString(l));
+			part1   = ips[i] & 0xFF;
+			part2   = ips[i+1] & 0xFF;
+			ip += part1 == 0? "" : Integer.toHexString(part1);
+			ip += (part1 == 0 && part2 == 0)? "" : (part2 < 10 && part1 != 0? "0" + Integer.toHexString(part2): Integer.toHexString(part2));
 			if (i < ips.length-2) {
 				ip += ":";
 			}
@@ -99,6 +99,8 @@ abstract class BabelBase <%= toplevel_class %> {
 	protected void writeInt8(int v, ByteArrayOutputStream out) {
 		if (v > 0xFF) { // Max 255
 			raiseError("Too large int8 number: " + v);
+		}else if(v < 0){
+			raiseError("a negative number passed  to int8 number: " + v);
 		}
 		out.write(v);
 	}
@@ -106,14 +108,18 @@ abstract class BabelBase <%= toplevel_class %> {
 	protected void writeInt16(int v, ByteArrayOutputStream out) {
 		if (v > 0xFFFF) { // Max 65.535 
 			raiseError("Too large int16 number: " + v);
+		}else if(v < 0){
+			raiseError("a negative number passed  to int16 number: " + v);
 		}
 		writeInt8(v >> 8 & 0xFF, out);
 		writeInt8(v & 0xFF, out);
 	}
 
 	protected void writeInt24(int v, ByteArrayOutputStream out) {
-		if (v > 0xFFFFFF) { // Max 16.777.215
+		if (v > 0xFFFFFF) { 	// Max 16.777.215
 			raiseError("Too large int24 number: " + v);
+		}else if(v < 0){	// In Case added to Java declaration
+			raiseError("a negative number passed  to int24 number: " + v);
 		}
 		writeInt8(v >> 16 & 0xFF, out);
 		writeInt16(v & 0xFFFF, out);
@@ -122,6 +128,8 @@ abstract class BabelBase <%= toplevel_class %> {
 	protected void writeInt32(long v, ByteArrayOutputStream out) {
 		if (v > 0xFFFFFFFFL) { // Max 4.294.967.295
 			raiseError("Too large int32 number: " + v);
+		}else if(v < 0){
+			raiseError("a negative number passed  to int32 number: " + v);
 		}
 		writeInt8((int) ((v >> 24) & 0xFF), out);
 		writeInt24((int) (v & 0xFFFFFF), out);
@@ -168,6 +176,14 @@ abstract class BabelBase <%= toplevel_class %> {
 	}
 
 	protected void writeIpNumber(String v, ByteArrayOutputStream out) throws IOException {
+		if(v.contains(":")){
+			writeIpv6Number( v, out);
+		}else{
+			writeIpv4Number( v, out);
+    		}
+	}
+        
+        protected void writeIpv4Number(String v, ByteArrayOutputStream out) throws IOException {
 		byte[] ss = new byte[0];
 		if(!v.isEmpty()){
 			String[] bs = v.split("\\\\.");
@@ -182,7 +198,7 @@ abstract class BabelBase <%= toplevel_class %> {
 			raiseError("Unknown IP v4 number " + v); // Only IPv4 for now 
 		}
 	}
-        
+
         protected void writeIpv6Number(String v, ByteArrayOutputStream out)
 			throws IOException {
 		v = v.replaceAll(" ", "") + " "; // Temporary: To avoid the split problem when we have : at the
@@ -210,7 +226,7 @@ abstract class BabelBase <%= toplevel_class %> {
 		}
 		// Check for make sure of the size of the IP groups in case "::" is used
 		// [> 2 & < 8]or not [must == 8]
-		if (contains_ipv6_letters
+		if (!contains_other_letters
 				&& (!v.contains("::") && ss.length == 0 || ss.length == 8)
 				|| (v.contains("::") && ss.length > 2 && ss.length < 8)) {
 			write16Binary(ss, out);
@@ -246,7 +262,7 @@ class <%= c.name %> extends BabelBase {
 	}
 
 	@Override
-	void deserialize(ByteArrayInputStream bais) throws IOException {
+	public void deserialize(ByteArrayInputStream bais) throws IOException {
 <% c.simple_fields.each do |f| %>
 		this.<%= f.name %> = <%= this.camelize("read", f.type) %>(bais);
 <% end %>
@@ -280,7 +296,7 @@ EOS2
           "0"
         when :int32
           "0L"
-        when :string, :ip_number, :ipv6_number
+        when :string, :ip_number
           "\"\""
         else
           if $all_structs[types]
@@ -317,7 +333,7 @@ EOS2
           is_reference_type ? "Integer" : "int"
         when :int32
           is_reference_type ? "Long" : "long"
-        when :string, :ip_number, :ipv6_number
+        when :string, :ip_number
           "String"
         else
           if $all_structs[types]
@@ -463,8 +479,16 @@ EOS2
     
       # User defined super class?
       toplevel = opts[:parent_class] || nil
-      toplevel = " extends #{toplevel}" if toplevel 
-      return "#{java_get_begin_module(opts)}#{base_template.result({ toplevel_class: toplevel })}\n\n#{src.join("\n\n")}"
+      toplevel = " extends #{toplevel}" if toplevel
+      if opts[:package]
+        res = [{file: "BabelBase.java", src: "#{java_get_begin_module(opts)}public #{base_template.result({ toplevel_class: toplevel })}"}]
+	for cls in src
+          res << {file: cls.match(/class (.*) extends/)[1]+".java", src: "#{java_get_begin_module(opts)}public #{cls}"}
+        end
+        return res
+      else
+        return [{file: opts[:file], src: "#{java_get_begin_module(opts)}#{base_template.result({ toplevel_class: toplevel })}\n\n#{src.join("\n\n")}"}]
+      end
     end
   
     def java_get_begin_module(opts)
@@ -476,10 +500,19 @@ EOS2
           "import java.io.IOException;",
           "import java.util.ArrayList;",
           "import java.util.HashMap;",
+          "import java.util.regex.Pattern;",
           "import java.nio.charset.Charset;\n\n"
         ].join("\n")
       else 
-        nil
+        [
+          "import java.io.ByteArrayInputStream;",
+          "import java.io.ByteArrayOutputStream;",
+          "import java.io.IOException;",
+          "import java.util.ArrayList;",
+          "import java.util.HashMap;",
+          "import java.util.regex.Pattern;",
+          "import java.nio.charset.Charset;\n\n"
+        ].join("\n")
       end
     end
   end

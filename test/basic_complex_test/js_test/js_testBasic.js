@@ -1,6 +1,8 @@
-eval(require('fs').readFileSync('./test_babel.js', 'utf8')); 
+eval(require('fs').readFileSync('test/basic_complex_test/js_test/test_babel.js', 'utf8')); 
 var assert = require('assert');
 var fs = require('fs');
+
+console.log("Basic Test");
 
 var testBasic_ser  = new TestBasic();
 testBasic_ser.i8   = 10;
@@ -12,11 +14,11 @@ testBasic_ser.guid = [1,15,4];
 var ca = testBasic_ser.serialize();
 
 serialize(ca);
-//var read = deserialize();
+var read = deserialize();
 
 
 var testBasic_deser = new TestBasic();
-testBasic_deser.deserialize(new BabelDataReader(ca));
+testBasic_deser.deserialize(new BabelDataReader(read));
 
 assert.equal(testBasic_ser.i8, testBasic_deser.i8);
 assert.equal(testBasic_ser.i16, testBasic_deser.i16);
@@ -42,5 +44,15 @@ function serialize(obj){
 
 function deserialize(){
   var data = fs.readFileSync(__dirname +  '/bin.babel.js');
+  data = toArray(data);
   return data;
+  
+}
+
+function toArray(buffer) {
+    var view = new Uint8Array(buffer.length);
+    for (var i = 0; i < buffer.length; ++i) {
+        view[i] = buffer[i];
+    }
+    return view;
 }

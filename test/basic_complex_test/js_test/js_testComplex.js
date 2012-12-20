@@ -1,5 +1,8 @@
-eval(require('fs').readFileSync('./test_babel.js', 'utf8')); 
+eval(require('fs').readFileSync('test/basic_complex_test/js_test/test_babel.js', 'utf8')); 
 var assert = require('assert');
+var fs = require('fs');
+
+console.log("Basic Test Part 2");
 
 var testComplex_ser = new TestComplex();
 testComplex_ser.list1 = [0, 1, 255, 0x7FFFFFFF, 0x7FFFFFFF+1, 0xFFFFFFFE, 0xFFFFFFFF];
@@ -9,9 +12,11 @@ testComplex_ser.map1[10] = 100;
 testComplex_ser.map2["FooBar"] = [new Entry(), new Entry()];
 
 var ca = testComplex_ser.serialize();
+serialize(ca);
+var read = deserialize();
 
 var testComplex_deser = new TestComplex();
-testComplex_deser.deserialize(new BabelDataReader(ca));
+testComplex_deser.deserialize(new BabelDataReader(read));
 
 compare_list(testComplex_ser.list1, testComplex_deser.list1);
 compare_list(testComplex_ser.list2, testComplex_deser.list2);
@@ -37,4 +42,27 @@ function compare_map2(map_1, map_2){
   }
 }
 
+function serialize(obj){
+  var bBuffer = new Buffer(obj);
+  fs.writeFileSync(__dirname +  '/bin.babel.js', bBuffer, function (err) {
+    if (err) {
+      return console.log(err);
+    }
+  });
+}
+
+function deserialize(){
+  var data = fs.readFileSync(__dirname +  '/bin.babel.js');
+  data = toArray(data);
+  return data;
+  
+}
+
+function toArray(buffer) {
+    var view = new Uint8Array(buffer.length);
+    for (var i = 0; i < buffer.length; ++i) {
+        view[i] = buffer[i];
+    }
+    return view;
+}
 
