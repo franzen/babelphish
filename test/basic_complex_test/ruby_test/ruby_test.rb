@@ -48,11 +48,11 @@ class TestBabelTestBasic < MiniTest::Unit::TestCase
     testcomplex_deser = BabelTest::TestComplex.new
     testcomplex_deser.deserialize res
 
-    assert testcomplex_ser.list1.sort == testcomplex_deser.list1.sort
-    assert testcomplex_ser.list2.sort == testcomplex_deser.list2.sort
-    assert testcomplex_ser.map1 == testcomplex_deser.map1
+    assert_equal testcomplex_ser.list1, testcomplex_deser.list1
+    assert_equal testcomplex_ser.list2, testcomplex_deser.list2
+    assert_equal testcomplex_ser.map1, testcomplex_deser.map1
     testcomplex_ser.map2.keys.each do |k|
-      assert testcomplex_ser.map2[k].length == testcomplex_deser.map2[k].length
+      assert_equal testcomplex_ser.map2[k].length, testcomplex_deser.map2[k].length
     end
   end
 
