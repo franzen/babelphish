@@ -2,7 +2,8 @@ module Divine
   $all_structs = {}
 
   class StructDefinition
-    def initialize(type, args)
+    def initialize(owner, type, args)
+      @owner = owner
       @type = type
       @args = args
     end
@@ -13,6 +14,10 @@ module Divine
   
     def type
       @type
+    end
+    
+    def version 
+      @owner.version
     end
   end
 
@@ -123,6 +128,8 @@ module Divine
       else
         1
       end
+    rescue => e
+      raise "Failed to get version number from '#{name}': #{properties.inspect}\n#{e}"
     end
     
     #
@@ -173,15 +180,15 @@ module Divine
       if type
         if block_given?
           puts ".... recursive definition"
-          builder = StructBuilder.new(:_inline_, version)
+          builder = StructBuilder.new(:_inline_, args)
           Docile.dsl_eval(builder, &block)
           args << builder
         end
         if @name == :_inline_
           # Pad the _inline_ name to anonymous inner types
-          @fields << type.new(m, [@name] + args)
+          @fields << type.new(self, m, [@name] + args)
         else
-          @fields << type.new(m, args)
+          @fields << type.new(self, m, args)
         end
         #puts "... adding #{m} to #{name}, got #{fields} ..."
       else

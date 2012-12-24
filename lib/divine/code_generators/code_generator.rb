@@ -3,6 +3,25 @@ require 'digest/sha1'
 module Divine
   $language_generators = {}
   
+  class StructHandler
+    attr_reader :name, :latest_version, :structs
+    
+    def initialize(structs)
+      @structs = structs
+      @name = structs.first.name
+      @latest_version = structs.last.version
+      @field_hash = structs.map(&:fields).flatten.group_by(&:name)
+    end
+    
+    def field(name)
+      @field_hash[name]
+    end
+    
+    def field_names
+      @field_hash.keys.sort
+    end
+  end
+  
   class BabelHelperMethods
     def format_src(first_indent, following_indent, is, spc = " ")
       indent = "#{spc * first_indent}"
@@ -53,11 +72,22 @@ module Divine
         raise "Inconsistent version numbering for '#{ss.first.name}': #{vos.map(&:version).join(', ')}"
       end
       
+      # Check that we don't have multiple variables with same name
+      vos.each do |s|
+        names = s.fields.group_by(&:name)
+        names.each_pair do |k, v|
+          raise "Multiple fields with same name '#{k}' is defined in '#{s.name}', version #{s.version}" unless v.size == 1
+        end
+      end
+      
       # Check types between versions
       check_field_types(vos)
       
       # Check for changed definitions
       check_freezed_structs(vos)
+      
+      # Return them ordered by version
+      vos
     end
     
     private
