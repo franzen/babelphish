@@ -1,12 +1,12 @@
 require 'erubis'
 require 'docile'
 
-require "divine/version"
-require "divine/dsl"
-require "divine/code_generators/code_generator"
-require "divine/code_generators/ruby"
-require "divine/code_generators/java"
-require "divine/code_generators/javascript"
+require_relative "divine/version"
+require_relative "divine/dsl"
+require_relative "divine/code_generators/code_generator"
+require_relative "divine/code_generators/ruby"
+require_relative "divine/code_generators/java"
+require_relative "divine/code_generators/javascript"
 
 module Divine
 end

@@ -36,11 +36,10 @@ module Divine
       raise "Unknown taget language: #{target}" unless gen
       puts "Generating code for #{target}"
       src = gen.generate_code($all_structs, opts)
-      target_dir = getTargetDir(opts[:target_dir])
+      target_dir = opts[:target_dir] + "/"
 
-      puts opts[:package]
+      require 'fileutils'
       if opts[:package]
-        require 'fileutils'
         path = target_dir + opts[:package].gsub(/\./, "/")
         FileUtils.mkdir_p(path) unless File.exists?(path)
         for cls in src
@@ -48,21 +47,12 @@ module Divine
            writeFile(file_name, cls[:src])
         end
       elsif opts[:file]
+        FileUtils.mkdir_p(target_dir) unless File.exists?(target_dir)
         path = target_dir + opts[:file]
         writeFile(path, src[0][:src])
       else
         puts src
       end
-    end
-
-    def getTargetDir(dir)
-      # check if the path is relative or absolute if exist
-      if dir && File.directory?(dir)
-        return dir + "/"
-      elsif dir && File.directory?(Dir.pwd + "/" + dir)
-        return Dir.pwd + dir + "/"
-      end
-      return Dir.pwd
     end
     
     def writeFile(path, content)
