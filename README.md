@@ -121,6 +121,37 @@ There are some basic rules regarding versioning of structs
 * The class that represents the struct also defines a 'struct_version' that keeps the current version of the struct
 
 
+### Freezing
+When starting to use generated code in production, the defined structs cannot be changed without unless you really know what you're doing. Otherwise things will break.
+To prevent that you change a struct by accident, you can 'freeze' a struct. The easiest way to get started is to add a empty _freeze_ field to the struct, like below
+
+```ruby
+require 'divine'
+
+struct 'Foobar', freeze: '' do
+  int8 :foo
+  int8 :bar
+end
+
+Divine::CodeGenerator.new.generate(:ruby, file: 'test_babel.rb')
+```
+
+The compiler will throw a runtime exception saying that the MD5 sum differs. Take the MD5 sum from this exception and put into the freeze field as below 
+
+```ruby
+require 'divine'
+
+struct 'Foobar', freeze: '3e59aa582d3137a2d0cdba174e5aa6b18beb649b' do
+  int8 :foo
+  int8 :bar
+end
+
+Divine::CodeGenerator.new.generate(:ruby, file: 'test_babel.rb')
+```
+
+It is now not possible to alter _Foobar_ by accident. If you make a change to the struct, you will also need to provide a correct MD5 sum.
+
+
 ## Installation
 
 Add this line to your application's Gemfile:
