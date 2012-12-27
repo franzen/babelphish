@@ -16,7 +16,7 @@ serialize(ca);
 var read = deserialize();
 
 var testComplex_deser = new TestComplex();
-testComplex_deser.deserialize(new BabelDataReader(read));
+testComplex_deser.deserialize(new DivineDataReader(read));
 
 compare_list(testComplex_ser.list1, testComplex_deser.list1);
 compare_list(testComplex_ser.list2, testComplex_deser.list2);

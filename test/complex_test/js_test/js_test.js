@@ -11,7 +11,7 @@ serialize(ca);
 var read = deserialize();
 
 var com_deser = new Complex();
-com_deser.deserialize(new BabelDataReader(read));
+com_deser.deserialize(new DivineDataReader(read));
 compare(com_ser, com_deser);
 
 function buildObject(){

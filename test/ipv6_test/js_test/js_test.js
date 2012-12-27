@@ -11,7 +11,7 @@ serialize(ca);
 var read = deserialize();
 
 var obj_deser = new IPV6();
-obj_deser.deserialize(new BabelDataReader(read));
+obj_deser.deserialize(new DivineDataReader(read));
 compare_list(obj_ser.list1, obj_deser.list1);
 
 function buildObject(){

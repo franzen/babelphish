@@ -18,7 +18,7 @@ var read = deserialize();
 
 
 var testBasic_deser = new TestBasic();
-testBasic_deser.deserialize(new BabelDataReader(read));
+testBasic_deser.deserialize(new DivineDataReader(read));
 
 assert.equal(testBasic_ser.i8, testBasic_deser.i8);
 assert.equal(testBasic_ser.i16, testBasic_deser.i16);

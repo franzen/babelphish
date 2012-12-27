@@ -7,7 +7,7 @@
 module Divine
   $debug_javascript = false
   
-  class JavascriptHelperMethods < DivineHelperMethods
+  class JavascriptHelperMethods < BabelHelperMethods
     def javascript_base_class_template_str
       <<EOS
 // ------------------------------------------------------------ DivineDataReader

@@ -9,7 +9,7 @@ serialize(ca);
 var read = deserialize();
 
 var obj_deser = new UnifySer();
-obj_deser.deserialize(new BabelDataReader(read));
+obj_deser.deserialize(new DivineDataReader(read));
 compare(obj_ser, obj_deser);
 
 function buildObject(){

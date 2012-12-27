@@ -8,7 +8,7 @@ var ca = binaryTree_ser.serialize();
 serialize(ca);
 var read = deserialize();
 var binaryTree_deser = new BinaryTree();
-binaryTree_deser.deserialize(new BabelDataReader(read));
+binaryTree_deser.deserialize(new DivineDataReader(read));
 compareBinaryTree(binaryTree_ser, binaryTree_deser);
 
 
