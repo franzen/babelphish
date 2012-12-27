@@ -28,7 +28,7 @@ public class JavaTest {
 	public SignedInt buildObj() {
 		SignedInt obj = new SignedInt();
 		obj.list1   = new ArrayList<Integer>(){{
-			add(255);
+			add(-1);
 			add(-2);
 			add(-3);
 			add(Integer.MAX_VALUE);
@@ -59,7 +59,7 @@ public class JavaTest {
 
 	public void serialize(BabelBase obj) throws IOException {
 		byte[] data = obj.serialize();
-		File file = new File("bin.babel");
+		File file = new File("test/signed_int_test/java_test/bin.babel");
 		try {
 		    new FileOutputStream(file).write(data);
 		} catch (Exception e) {
@@ -68,7 +68,7 @@ public class JavaTest {
 	}
 
 	public byte[] deserialize() throws IOException{
-		File file = new File("bin.babel");
+		File file = new File("test/signed_int_test/java_test/bin.babel");
 		byte[] data = new byte[(int) file.length()];
 		try {
 		    new FileInputStream(file).read(data);

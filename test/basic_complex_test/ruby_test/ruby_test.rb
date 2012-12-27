@@ -24,12 +24,12 @@ class TestBabelTestBasic < MiniTest::Unit::TestCase
     testbasic_deser = BabelTest::TestBasic.new
     testbasic_deser.deserialize res
 
-    assert testbasic_ser.i8 == testbasic_deser.i8
-    assert testbasic_ser.i16 == testbasic_deser.i16
-    assert testbasic_ser.i32 == testbasic_deser.i32
-    assert testbasic_ser.str == testbasic_deser.str
-    assert testbasic_ser.ip == testbasic_deser.ip
-    assert testbasic_ser.guid == testbasic_deser.guid
+    assert_equal testbasic_ser.i8 , testbasic_deser.i8
+    assert_equal testbasic_ser.i16 , testbasic_deser.i16
+    assert_equal testbasic_ser.i32 , testbasic_deser.i32
+    assert_equal testbasic_ser.str , testbasic_deser.str
+    assert_equal testbasic_ser.ip , testbasic_deser.ip
+    assert_equal testbasic_ser.guid , testbasic_deser.guid
   end
 
   def test_complex

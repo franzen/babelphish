@@ -49,10 +49,10 @@ class TestBabelTestBasic < MiniTest::Unit::TestCase
   end
 
   def compareBinaryTree(bt1, bt2)
-    assert bt1.root_node.length == bt2.root_node.length
-    assert bt1.root_node[0].i32 == bt2.root_node[0].i32
-    assert bt1.root_node[0].next_node.length == bt2.root_node[0].next_node.length
-    assert bt1.root_node[0].next_node[0].next_node[0].i32 == bt2.root_node[0].next_node[0].next_node[0].i32
+    assert_equal bt1.root_node.length, bt2.root_node.length
+    assert_equal bt1.root_node[0].i32, bt2.root_node[0].i32
+    assert_equal bt1.root_node[0].next_node.length, bt2.root_node[0].next_node.length
+    assert_equal bt1.root_node[0].next_node[0].next_node[0].i32, bt2.root_node[0].next_node[0].next_node[0].i32
   end
 
   def serialize(data)

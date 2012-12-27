@@ -30,14 +30,12 @@ public class JavaTest {
 		obj.list1   = new ArrayList<String>(){{
 			add("255.102.0.25");
 			add("ff:fabf:faf:f15f:f1ff:f2f:1f:f2");
+			add("2001:db8::ff00:1:8329");
+			add("f::");
+			add("::1");
+			add("");
 		}};
 		
-		// Should Success
-//	    obj.ip = "2001:db8::ff00:1:8329";
-//	    obj.ip = "F::";
-//	    obj.ip = "::1";
-//	    obj.ip = "";
-		    
 	    // Should Fail or raise error
 //	    obj.ip = "2001:0db8:0000:0000:0000:ff00:0042:8329";
 //	    obj.ip = "2001:db8:::ff00:42:8329";

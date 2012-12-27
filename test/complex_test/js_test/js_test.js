@@ -16,8 +16,9 @@ compare(com_ser, com_deser);
 
 function buildObject(){
   var ipList_1 = new IPList();
-  ipList_1.list1 = ["10.2.2.1","127.0.0.1","129.36.58.15"];
+  ipList_1.list1 = ["10.2.2.1","127.0.0.1","129.36.58.15"]
   ipList_1.list2 = ["2001:db8::ff00:1:8329","ff:ac:12::5f","1::"]
+
 
   var ipList_2 = new IPList();
   ipList_2.list1 = ["100.20.20.10","17.10.10.1","12.36.68.105"];
