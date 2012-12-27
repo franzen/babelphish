@@ -122,7 +122,7 @@ There are some basic rules regarding versioning of structs
 
 
 ### Freezing
-When starting to use generated code in production, the defined structs cannot be changed without unless you really know what you're doing. Otherwise things will break.
+When starting to use generated code in production, the defined structs cannot be changed without breaking everything (unless you really know what you're doing).
 To prevent that you change a struct by accident, you can 'freeze' a struct. The easiest way to get started is to add a empty _freeze_ field to the struct, like below
 
 ```ruby
@@ -136,7 +136,7 @@ end
 Divine::CodeGenerator.new.generate(:ruby, file: 'test_babel.rb')
 ```
 
-The compiler will throw a runtime exception saying that the MD5 sum differs. Take the MD5 sum from this exception and put into the freeze field as below 
+The compiler will throw a runtime exception saying that the MD5 sum differs. Take the MD5 sum from this exception and put into the _freeze_ field as below 
 
 ```ruby
 require 'divine'
