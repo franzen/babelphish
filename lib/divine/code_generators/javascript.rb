@@ -4,8 +4,6 @@
 # . They are 64-bit floating point values, the largest exact integral value is 2^53, or 9007199254740992 (-9007199254740992 to 9007199254740992)
 
 
-require 'pp'
-
 module Divine
   $debug_javascript = false
   
@@ -589,7 +587,6 @@ EOS2
 
   class JavascriptGenerator < JavascriptHelperMethods
     def generate_code(structs, opts)
-      pp opts
       $debug_javascript = true if opts[:debug]
       base_template = Erubis::Eruby.new(javascript_base_class_template_str)
       class_template = Erubis::Eruby.new(javascript_class_template_str)

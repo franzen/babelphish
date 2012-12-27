@@ -485,7 +485,6 @@ EOS2
 
   class JavaGenerator < JavaHelperMethods
     def generate_code(structs, opts)
-      pp opts
       $debug_java = true if opts[:debug]
       base_template = Erubis::Eruby.new(java_base_class_template_str)
       class_template = Erubis::Eruby.new(java_class_template_str)

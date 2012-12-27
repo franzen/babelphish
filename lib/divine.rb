@@ -15,7 +15,7 @@ end
 # Toplevel definition of struct'
 #
 def struct(name, properties=nil, &block)
-  puts "struct #{name}"
+  #puts "struct #{name}"
   builder = Divine::StructBuilder.new(name, properties) # Defined in divine/dsl.rb
   ::Docile.dsl_eval(builder, &block)
   builder

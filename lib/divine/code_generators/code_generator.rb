@@ -1,4 +1,6 @@
 require 'digest/sha1'
+require 'fileutils'
+
 
 module Divine
   $language_generators = {}
@@ -142,7 +144,6 @@ module Divine
       src = gen.generate_code($all_structs, opts)
       target_dir = opts[:target_dir] + "/"
 
-      require 'fileutils'
       if opts[:package]
         path = target_dir + opts[:package].gsub(/\./, "/")
         FileUtils.mkdir_p(path) unless File.exists?(path)

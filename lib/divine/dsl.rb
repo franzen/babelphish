@@ -183,11 +183,11 @@ module Divine
     end
 
     def method_missing(m, *args, &block)
-      puts "... #{m} #{args.inspect}"
+      #puts "... #{m} #{args.inspect}"
       type = $available_types[m]
       if type
         if block_given?
-          puts ".... recursive definition"
+          #puts ".... recursive definition"
           builder = StructBuilder.new(:_inline_, args)
           Docile.dsl_eval(builder, &block)
           args << builder

@@ -479,7 +479,6 @@ module Divine
     @debug = true
   
     def generate_code(structs, opts)
-      pp opts
       base_template = Erubis::Eruby.new(ruby_base_class_template_str)
       keys = structs.keys.sort
       src = keys.map do |k|
