@@ -19,6 +19,10 @@ module Divine
     def version 
       @owner.version
     end
+    
+    def to_s
+      "#{@owner.name}: #{self.type} #{self.name} (#{self.class.name}, #{@args.inspect})"
+    end
   end
 
   class SimpleDefinition < StructDefinition
