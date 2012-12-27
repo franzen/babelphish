@@ -278,7 +278,7 @@ EOS2
       if types.respond_to? :referenced_types
         java_get_empty_declaration(types.referenced_types)
 
-      elsif types.respond_to? :first
+      elsif types.respond_to?(:first) && types.size > 1
         case types.first
         when :list
           "new #{java_get_type_declaration(types, true)}()"
@@ -287,6 +287,9 @@ EOS2
         else
           raise "Missing empty declaration for #{types}"
         end
+
+      elsif types.respond_to?(:first) && types.size == 1
+        java_get_empty_declaration(types.first, is_reference_type)
 
       else
         case types
@@ -310,10 +313,9 @@ EOS2
     
     def java_get_type_declaration(types, is_reference_type = false)
       if types.respond_to? :referenced_types
-        puts "#{types.to_s}\n"
         java_get_type_declaration(types.referenced_types, is_reference_type)
 
-      elsif types.respond_to? :first && types.size > 1
+      elsif types.respond_to?(:first) && types.size > 1
         case types.first
         when :list
           subtypes = java_get_type_declaration(types[1], true)
@@ -325,9 +327,12 @@ EOS2
         else
           raise "Missing serialization for #{types}"
         end
+        
+      elsif types.respond_to?(:first) && types.size == 1
+        java_get_type_declaration(types.first, is_reference_type)
 
       else
-        case types.first
+        case types
         when :binary, :short_binary
           is_reference_type ? "Byte[]" : "byte[]"
         when :int8, :int16
