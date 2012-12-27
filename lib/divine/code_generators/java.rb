@@ -262,8 +262,6 @@ abstract class BabelBase <%= toplevel_class %> {
 EOS
     end
 
-
-    
     def java_class_template(sh)
       code = [
         "class #{sh.name} extends BabelBase {",
@@ -293,7 +291,7 @@ EOS
             s.complex_fields.map do |f|
               [
                 "", "// Serialize #{f.type} '#{f.name}'",
-                java_serialize_internal(f.name,  f.referenced_types)
+                java_serialize_internal("this.#{f.name}",  f.referenced_types)
               ]
             end,
             "return;",

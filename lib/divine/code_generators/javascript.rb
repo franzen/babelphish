@@ -415,42 +415,89 @@ DivineHelper.prototype.raise_error = function (msg) {
 EOS
     end
 
-    def javascript_class_template_str
-      <<EOS2
-// ------------------------------------------------------------ <%= c.name %>
-function <%= c.name %>() {
-   DivineHelper.call(this);  
-<% c.fields.each do |f| %>
-   this.<%= f.name %> = <%= this.javascript_get_empty_declaration(f) %>;
-<% end %>
-}
+    def javascript_class_template(sh)
+      code = [
+        "",
+        "// ------------------------------------------------------------ #{sh.name}",
+        "function #{sh.name}() {",
+        :indent,
+        "DivineHelper.call(this);",
+        "",
+        # PROPERTIES
+      	"this.struct_version = #{sh.latest_version};",
+        sh.field_names.map do |fn|
+          f = sh.field(fn).last
+          "this.#{f.name} = #{javascript_get_empty_declaration(f)};"
+        end,
+        :deindent,
+        "}", "",
+        
+        "// Inherit DivineHelper",
+        "#{sh.name}.prototype = new DivineHelper();", "",
 
-// Inherit DivineHelper
-<%= c.name %>.prototype = new DivineHelper();
- 
-// Correct the constructor pointer because it points to DivineHelper
-<%= c.name %>.prototype.constructor = <%= c.name %>;
+        "// Correct the constructor pointer because it points to DivineHelper",
+        "#{sh.name}.prototype.constructor = #{sh.name};", "",
 
-// Define the methods of <%= c.name %>
-<%= c.name %>.prototype.deserialize = function (data) {
-<% c.simple_fields.each do |f| %>
-   this.<%= f.name %> = this.read_<%= f.type %>(data);
-<% end %>
-<% c.complex_fields.each do |f| %>
-<%= this.javascript_deserialize_complex f %>
-<% end %>
-}
+        # SERiALIZE INTERNAL
+        "// Serialize",
+        "#{sh.name}.prototype.serialize_internal = function(out) {",
+        :indent,
+        "this.write_int8(this.struct_version, out);",
+        sh.structs.map do |s|
+          [
+            "if(this.struct_version == #{s.version}) {",
+            :indent,
+            s.simple_fields.map do |f|
+              "this.write_#{f.type}(this.#{f.name}, out);"
+            end,
+            s.complex_fields.map do |f|
+              [
+                "", "// Serialize #{f.type} '#{f.name}'",
+                $debug_javascript ? "console.log(\"Serialize '#{field.name}'\");" : nil,
+                javascript_serialize_internal("this.#{f.name}",  f.referenced_types)
+              ]
+            end,
+            "return;",
+            :deindent,
+            "}", ""
+          ]
+        end, "",
+        "throw \"Unsupported version \" + this.struct_version + \" for type '#{sh.name}'\";",
+        :deindent,
+        "}", "",
 
-<%= c.name %>.prototype.serialize_internal = function(out) {
-<% c.simple_fields.each do |f| %>
-   this.write_<%= f.type %>(this.<%= f.name %>, out);
-<% end %>
-<% c.complex_fields.each do |f| %>
-<%= this.javascript_serialize_complex f %>
-<% end %>
-}
-EOS2
+        # DESERIALIZE
+        "// Deserialize",
+        "#{sh.name}.prototype.deserialize = function (data) {",
+        :indent,
+        "this.struct_version = this.read_int8(data);",
+        sh.structs.map do |s|
+          [
+            "if(this.struct_version == #{s.version}) {",
+            :indent,
+            s.simple_fields.map do |f|
+              "this.#{f.name} = this.read_#{f.type}(data);"
+            end,
+            s.complex_fields.map do |f|
+              [
+                "", "// Read #{f.type} '#{f.name}'",
+                $debug_javascript ? "console.log(\"Deserialize '#{field.name}'\");" : nil,
+                javascript_deserialize_internal("this.#{f.name}",  f.referenced_types)
+              ]
+            end,
+            "return;",
+            :deindent,
+            "}"
+          ]
+        end, "",
+        "throw \"Unsupported version \" + this.struct_version + \" for type '#{sh.name}'\";",
+        :deindent,
+        "}"
+      ]
+        
+      format_src(0, 3, code)
     end
+
 
     def javascript_get_empty_declaration(field)
       case field.type
@@ -465,16 +512,6 @@ EOS2
       else
         raise "Unkown field type #{field.type}"
       end
-    end
-
-    def javascript_serialize_complex(field)
-      types = field.referenced_types
-      as = [
-            "// Serialize #{field.type} '#{field.name}'",
-            $debug_javascript ? "console.log(\"Serialize '#{field.name}'\");" : nil,
-            javascript_serialize_internal("this.#{field.name}", types)
-           ]
-      format_src(4, 4, as)
     end
 
     def javascript_serialize_internal(var, types)
@@ -522,16 +559,6 @@ EOS2
           raise "Missing code generation case #{types}"
         end
       end
-    end
-
-    def javascript_deserialize_complex(field)
-      types = field.referenced_types
-      as = [
-            "// Deserialize #{field.type} '#{field.name}'",
-            $debug_javascript ? "console.log(\"Deserialize '#{field.name}'\");" : nil,
-            javascript_deserialize_internal("this.#{field.name}", types)
-           ]
-      format_src(4, 4, as)
     end
 
     def javascript_deserialize_internal(var, types)
@@ -595,13 +622,12 @@ EOS2
     def generate_code(structs, opts)
       $debug_javascript = true if opts[:debug]
       base_template = Erubis::Eruby.new(javascript_base_class_template_str)
-      class_template = Erubis::Eruby.new(javascript_class_template_str)
       keys = structs.keys.sort
       src = keys.map do |k|
         ss = structs[k]
-        # TODO: Should we merge different versions and deduce deprecated methods, warn for incompatible changes, etc?
-        raise "Duplicate definitions of struct #{k}" if ss.size > 1
-        class_template.result( c: ss.first, this: self )
+        # Check different aspects the the structs
+        vss = sanity_check(ss)
+        javascript_class_template(StructHandler.new(vss))
       end
     
       # User defined super class?
