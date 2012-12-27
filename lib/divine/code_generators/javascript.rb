@@ -8,6 +8,12 @@ module Divine
   $debug_javascript = false
   
   class JavascriptHelperMethods < BabelHelperMethods
+    def get_header_comment
+      get_header_comment_text.map do |s|
+        "// #{s}"
+      end.join("\n")
+    end
+    
     def javascript_base_class_template_str
       <<EOS
 // ------------------------------------------------------------ DivineDataReader
@@ -605,7 +611,7 @@ EOS2
     end
   
     def javascript_get_begin_module(opts)
-      nil
+       "#{get_header_comment}\n\n"
     end
 
     def javascript_get_end_module(opts)

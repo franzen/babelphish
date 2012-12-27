@@ -40,3 +40,8 @@ test/binaryTree_test/java_test/test_binaryTree.java
 test/complex_test/java_test/test_complex.java
 test/ipv6_test/java_test/test_ipv6.java
 test/signed_int_test/java_test/test_signed_int.java
+test/basic_complex_test/js_test/test_babel.js
+test/binaryTree_test/js_test/test_binaryTree.js
+test/complex_test/js_test/test_complex.js
+test/ipv6_test/js_test/test_ipv6.js
+test/signed_int_test/js_test/test_signed_int.js
