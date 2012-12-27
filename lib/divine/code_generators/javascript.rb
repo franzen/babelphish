@@ -7,83 +7,83 @@
 module Divine
   $debug_javascript = false
   
-  class JavascriptHelperMethods < BabelHelperMethods
+  class JavascriptHelperMethods < DivineHelperMethods
     def javascript_base_class_template_str
       <<EOS
-// ------------------------------------------------------------ BabelDataReader
-function BabelDataReader(data) {
+// ------------------------------------------------------------ DivineDataReader
+function DivineDataReader(data) {
     this.data = data;
     this.index = 0;
 }
 
-BabelDataReader.prototype.getbyte = function () {
+DivineDataReader.prototype.getbyte = function () {
     return this.data[this.index++];
 };
 
-BabelDataReader.prototype.read = function (items) {
+DivineDataReader.prototype.read = function (items) {
     var from = this.index;
     this.index += items
     return this.data.subarray(from, this.index)
 };
 
 
-// ------------------------------------------------------------ BabelDataWriter
-function BabelDataWriter(data) {
+// ------------------------------------------------------------ DivineDataWriter
+function DivineDataWriter(data) {
     this.data = data;
     this.index = 0;
     this.data = new Uint8Array(4096);
 }
 
-BabelDataWriter.prototype._realloc = function (size) {
+DivineDataWriter.prototype._realloc = function (size) {
     size = size || 4096;
     var old_data = this.data;
     this.data = new Uint8Array(Math.max(size, 4096) + this.data.length);
     this.data.set(old_data, 0);
 };
 
-BabelDataWriter.prototype.writeByte = function (a_byte) {
+DivineDataWriter.prototype.writeByte = function (a_byte) {
     if (this.index + 1 >= this.data.length) this._realloc();
     this.data[this.index++] = a_byte;
 };
 
-BabelDataWriter.prototype.write = function (bytes) {
+DivineDataWriter.prototype.write = function (bytes) {
     if (this.index + bytes.length >= this.data.length) this._realloc(bytes.length);
     this.data.set(bytes, this.index);
     this.index += bytes.length;
 };
 
-BabelDataWriter.prototype.get_data = function () {
+DivineDataWriter.prototype.get_data = function () {
     return this.data.subarray(0, this.index);
 };
 
 
-// ------------------------------------------------------------ BabelHelper
-function BabelHelper() {}
+// ------------------------------------------------------------ DivineHelper
+function DivineHelper() {}
 
-BabelHelper.prototype.serialize = function () {
-    var out = new BabelDataWriter();
+DivineHelper.prototype.serialize = function () {
+    var out = new DivineDataWriter();
     this.serialize_internal(out);
     return out.get_data();
 }
 
-BabelHelper.prototype.read_int8 = function (data) {
+DivineHelper.prototype.read_int8 = function (data) {
     return data.getbyte();
 };
 
-BabelHelper.prototype.read_int16 = function (data) {
+DivineHelper.prototype.read_int16 = function (data) {
     return (data.getbyte() << 8) | this.read_int8(data);
 };
 
-BabelHelper.prototype.read_int24 = function (data) {
+DivineHelper.prototype.read_int24 = function (data) {
     return (data.getbyte() << 16) | this.read_int16(data);
 };
 
-BabelHelper.prototype.read_int32 = function (data) {
+DivineHelper.prototype.read_int32 = function (data) {
     // return (data.getbyte() << 24) | this.read_int24(data); // See notes about numbers above
     return (data.getbyte() * (256*256*256)) + this.read_int24(data);
 };
 
-BabelHelper.prototype.read_sint32 = function (data) {
+DivineHelper.prototype.read_sint32 = function (data) {
     // return (data.getbyte() << 24) | this.read_int24(data); // See notes about numbers above
     var num = (data.getbyte() * (256*256*256)) + this.read_int24(data);
     if (num > (Math.pow(2, 32 - 1) -1) ){
@@ -92,15 +92,15 @@ BabelHelper.prototype.read_sint32 = function (data) {
     return num;
 };
 
-BabelHelper.prototype.read_binary = function (data) {
+DivineHelper.prototype.read_binary = function (data) {
     return data.read(this.read_int32(data));
 };
 
-BabelHelper.prototype.read_short_binary = function (data) {
+DivineHelper.prototype.read_short_binary = function (data) {
     return data.read(this.read_int8(data));
 };
 
-BabelHelper.prototype.read_ip_number = function (data) {
+DivineHelper.prototype.read_ip_number = function (data) {
     var ip_array = this.read_short_binary(data);
     if(ip_array.length == 4){
        return this.read_ipv4_number(ip_array);
@@ -109,7 +109,7 @@ BabelHelper.prototype.read_ip_number = function (data) {
     }
 };
 
-BabelHelper.prototype.read_ipv4_number = function (ip_array) {
+DivineHelper.prototype.read_ipv4_number = function (ip_array) {
     ip = "";
     for (i = 0, len = ip_array.length; i < len; i++) {
         b = ip_array[i];
@@ -120,7 +120,7 @@ BabelHelper.prototype.read_ipv4_number = function (ip_array) {
     }
     return ip;
 };
-BabelHelper.prototype.read_ipv6_number = function (ip_array) {
+DivineHelper.prototype.read_ipv6_number = function (ip_array) {
     var ip = "";
     var part1, part2;
     for (i = 0, len = ip_array.length; i < len; i+=2) {
@@ -135,11 +135,11 @@ BabelHelper.prototype.read_ipv6_number = function (ip_array) {
     return ip;
 };
 
-BabelHelper.prototype.read_string = function (data) {
+DivineHelper.prototype.read_string = function (data) {
     return this.decode_utf8(data.read(this.read_int16(data)))
 };
 
-BabelHelper.prototype.write_int8 = function (v, out) {
+DivineHelper.prototype.write_int8 = function (v, out) {
     if (v > 0xFF) // Max 255
       this.raise_error("Too large int8 number: " + v);
     if(v < 0)
@@ -147,7 +147,7 @@ BabelHelper.prototype.write_int8 = function (v, out) {
     out.writeByte(v);
 }
 
-BabelHelper.prototype.write_int16 = function (v, out) {
+DivineHelper.prototype.write_int16 = function (v, out) {
     if (v > 0xFFFF) // Max 65.535
       this.raise_error("Too large int16 number: " + v);
     if(v < 0)
@@ -156,7 +156,7 @@ BabelHelper.prototype.write_int16 = function (v, out) {
     this.write_int8(v & 0xFF, out);
 }
 
-BabelHelper.prototype.write_int24 = function (v, out) {
+DivineHelper.prototype.write_int24 = function (v, out) {
     if (v > 0xFFFFFF) 	// Max 16.777.215
       this.raise_error("Too large int24 number: " + v);
     if (v < 0)		// In Case added to JavaScript declaration
@@ -165,7 +165,7 @@ BabelHelper.prototype.write_int24 = function (v, out) {
     this.write_int16(v & 0xFFFF, out);
 }
 
-BabelHelper.prototype.write_int32 = function (v, out) {
+DivineHelper.prototype.write_int32 = function (v, out) {
     if (v > 0xFFFFFFFF) // Max 4.294.967.295
       this.raise_error("Too large int32 number: " + v);
     if(v < 0)
@@ -174,7 +174,7 @@ BabelHelper.prototype.write_int32 = function (v, out) {
     this.write_int24(v & 0xFFFFFF, out);
 }
 
-BabelHelper.prototype.write_sint32 = function (v, out) {
+DivineHelper.prototype.write_sint32 = function (v, out) {
     var max = Math.pow(2, 32 - 1) - 1;
     var min = Math.pow(2, 32 - 1) - Math.pow(2, 32);
     if (v > max) 			// Max  2.147.483.647
@@ -185,18 +185,18 @@ BabelHelper.prototype.write_sint32 = function (v, out) {
     this.write_int24(v & 0xFFFFFF, out);
 }
 
-BabelHelper.prototype.write_bool = function (v, out) {
+DivineHelper.prototype.write_bool = function (v, out) {
     this.write_int8(v ? 1 : 0, out)
 }
 
-BabelHelper.prototype.write_string = function (v, out) {
+DivineHelper.prototype.write_string = function (v, out) {
     var s = this.encode_utf8(v);
     if (s.length > 0xFFFF) this.raise_error("Too large string: " + s.length + " bytes");
     this.write_int16(s.length, out);
     out.write(s);
 }
 
-BabelHelper.prototype.write_binary = function (v, out) {
+DivineHelper.prototype.write_binary = function (v, out) {
     if ((v instanceof Array) || (v instanceof Uint8Array)) {
         if (v.length > 0xFFFFFFFF) this.raise_error("Too large binary: " + v.length + " (" + v.constructor.name + ")");
         this.write_int32(v.length, out)
@@ -212,7 +212,7 @@ BabelHelper.prototype.write_binary = function (v, out) {
     }
 }
 
-BabelHelper.prototype.write_16_binary = function (v, out) {
+DivineHelper.prototype.write_16_binary = function (v, out) {
     if ((v instanceof Array) || (v instanceof Uint8Array)) {
         if (v.length > 0xFF) this.raise_error("Too large 16 binary: " + v.length*2 + " (" + v.constructor.name + ")");
         this.write_int8(v.length * 2, out)
@@ -227,7 +227,7 @@ BabelHelper.prototype.write_16_binary = function (v, out) {
     }
 }
 
-BabelHelper.prototype.write_short_binary = function (v, out) {
+DivineHelper.prototype.write_short_binary = function (v, out) {
     if ((v instanceof Array) || (v instanceof Uint8Array)) {
         if (v.length > 0xFF) this.raise_error("Too large binary: " + v.length + " (" + v.constructor.name + ")");
         this.write_int8(v.length, out)
@@ -243,7 +243,7 @@ BabelHelper.prototype.write_short_binary = function (v, out) {
     }
 }
 
-BabelHelper.prototype.write_ip_number = function (v, out) {
+DivineHelper.prototype.write_ip_number = function (v, out) {
     if ((v instanceof Array) || (v instanceof Uint8Array)){
       if(v.length == 4){
          this.write_ipv4_number(v, out);
@@ -261,7 +261,7 @@ BabelHelper.prototype.write_ip_number = function (v, out) {
     }
 }
 
-BabelHelper.prototype.write_ipv4_number = function (v, out) {
+DivineHelper.prototype.write_ipv4_number = function (v, out) {
     if ((v instanceof Array) || (v instanceof Uint8Array)) {
         if (v.length != 4 && v.length != 0) this.raise_error("Unknown IP v4 number " + v);
         this.write_short_binary(v, out)
@@ -276,7 +276,7 @@ BabelHelper.prototype.write_ipv4_number = function (v, out) {
     }
 };
 
-BabelHelper.prototype.write_ipv6_number = function (v, out) {
+DivineHelper.prototype.write_ipv6_number = function (v, out) {
     if ((v instanceof Array) || (v instanceof Uint8Array)) {
         this.write_16_binary(v, out)
     } else if (v.constructor == String) {
@@ -288,7 +288,7 @@ BabelHelper.prototype.write_ipv6_number = function (v, out) {
             v = v.replace(/ /g, "");
             ss = v.split(":").map(function (t){
                if (t.length > 4)
-		 new BabelHelper().raise_error("Unknown IP Group number '" + t + "'");
+		 new DivineHelper().raise_error("Unknown IP Group number '" + t + "'");
                if (t.length == 0)
                  t = "0";
                return parseInt(t, 16);
@@ -306,7 +306,7 @@ BabelHelper.prototype.write_ipv6_number = function (v, out) {
     }
 }
 
-BabelHelper.prototype.encode_utf8 = function (str) {
+DivineHelper.prototype.encode_utf8 = function (str) {
     var utf8 = [];
     var chr, next_chr;
     var x, y, z;
@@ -349,7 +349,7 @@ BabelHelper.prototype.encode_utf8 = function (str) {
     return utf8;
 }
 
-BabelHelper.prototype.decode_utf8 = function (utf8_data) {
+DivineHelper.prototype.decode_utf8 = function (utf8_data) {
     var str = "";
     var chr, b2, b3, b4;
     for (var i = 0; i < utf8_data.length; i++) {
@@ -403,7 +403,7 @@ BabelHelper.prototype.decode_utf8 = function (utf8_data) {
     return str;
 }
 
-BabelHelper.prototype.raise_error = function (msg) {
+DivineHelper.prototype.raise_error = function (msg) {
     throw "[" + this.constructor.name + "] " + msg;
 }
 EOS
@@ -413,16 +413,16 @@ EOS
       <<EOS2
 // ------------------------------------------------------------ <%= c.name %>
 function <%= c.name %>() {
-   BabelHelper.call(this);  
+   DivineHelper.call(this);  
 <% c.fields.each do |f| %>
    this.<%= f.name %> = <%= this.javascript_get_empty_declaration(f) %>;
 <% end %>
 }
 
-// Inherit BabelHelper
-<%= c.name %>.prototype = new BabelHelper();
+// Inherit DivineHelper
+<%= c.name %>.prototype = new DivineHelper();
  
-// Correct the constructor pointer because it points to BabelHelper
+// Correct the constructor pointer because it points to DivineHelper
 <%= c.name %>.prototype.constructor = <%= c.name %>;
 
 // Define the methods of <%= c.name %>
