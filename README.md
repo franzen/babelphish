@@ -114,10 +114,10 @@ Divine::CodeGenerator.new.generate(:java, file: 'test_babel.java')
 
 There are some basic rules regarding versioning of structs
 
-* A versioned struct defineds all fields you want to serialize/deserialize
+* A versioned struct defines all fields you want to serialize/deserialize
 * You can delete and add fields as you whish between versions
 * You are not allowed to change type of a defined variable between versions
-* You  cannot have a bigger version number than 255
+* You cannot have a bigger version number than 255
 * The class that represents the struct also defines a 'struct_version' that keeps the current version of the struct
 
 
