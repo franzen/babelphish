@@ -1,6 +1,12 @@
 module Divine
 
   class JavaHelperMethods < BabelHelperMethods
+    def get_header_comment
+      get_header_comment_text.map do |s|
+        "// #{s}"
+      end.join("\n")
+    end
+    
     def java_base_class_template_str
       <<EOS
 abstract class BabelBase <%= toplevel_class %> {
@@ -256,37 +262,86 @@ abstract class BabelBase <%= toplevel_class %> {
 EOS
     end
 
-    def java_class_template_str
-      <<EOS2
-class <%= c.name %> extends BabelBase {
-<% unless c.fields.empty? %>
-<% c.fields.each do |f| %>
-	public <%= this.java_get_type_declaration(f) %> <%= f.name %> = <%= this.java_get_empty_declaration(f) %>;
-<% end %>
-<% end %>
 
-	@Override
-	void serializeInternal(ByteArrayOutputStream baos) throws IOException {
-<% c.simple_fields.each do |f| %>
-		<%= this.camelize("write", f.type) %>(this.<%= f.name %>, baos);
-<% end %>
-<% c.complex_fields.each do |f| %>
-<%= this.java_serialize_complex f %>
-<% end %>
-	}
+    
+    def java_class_template(sh)
+      code = [
+        "class #{sh.name} extends BabelBase {",
+        :indent,
+        "",
 
-	@Override
-	public void deserialize(ByteArrayInputStream bais) throws IOException {
-<% c.simple_fields.each do |f| %>
-		this.<%= f.name %> = <%= this.camelize("read", f.type) %>(bais);
-<% end %>
-<% c.complex_fields.each do |f| %>
-<%= this.java_deserialize_complex f %>
-<% end %>
-	}
-}
-EOS2
+        # PROPERTIES
+      	"public int struct_version = #{sh.latest_version};",
+        sh.field_names.map do |fn|
+          f = sh.field(fn).last
+        	"public #{java_get_type_declaration(f)} #{fn} = #{java_get_empty_declaration(f)};"
+        end, "",
+        
+
+        # SERiALIZE INTERNAL
+        "@Override",
+        "void serializeInternal(ByteArrayOutputStream baos) throws IOException {",
+        :indent,
+        "writeInt8(this.struct_version, baos);",
+        sh.structs.map do |s|
+          [
+            "if(this.struct_version == #{s.version}) {",
+            :indent,
+            s.simple_fields.map do |f|
+              "#{camelize("write", f.type)}(this.#{f.name}, baos);"
+            end,
+            s.complex_fields.map do |f|
+              [
+                "", "// Serialize #{f.type} '#{f.name}'",
+                java_serialize_internal(f.name,  f.referenced_types)
+              ]
+            end,
+            "return;",
+            :deindent,
+            "}", ""
+          ]
+        end, "",
+        "throw new UnsupportedOperationException(\"Unsupported version \" + this.struct_version + \" for type '#{sh.name}'\");",
+        :deindent,
+        "}", "",
+
+
+        # DESERIALIZE
+        "@Override",
+        "public void deserialize(ByteArrayInputStream bais) throws IOException {",
+        :indent,
+        "this.struct_version = readInt8(bais);",
+        sh.structs.map do |s|
+          [
+            "if(this.struct_version == #{s.version}) {",
+            :indent,
+            s.simple_fields.map do |f|
+              "this.#{f.name} = #{camelize("read", f.type)}(bais);"
+            end,
+            s.complex_fields.map do |f|
+              [
+                "", "// Read #{f.type} '#{f.name}'",
+                java_deserialize_internal("this.#{f.name}",  f.referenced_types)
+              ]
+            end,
+            "return;",
+            :deindent,
+            "}"
+          ]
+        end, "",
+        "throw new UnsupportedOperationException(\"Unsupported version \" + this.struct_version + \" for type '#{sh.name}'\");",
+        :deindent,
+        "}", "",
+
+
+        # END OF CLASS
+        :deindent,
+        "}"
+      ]
+        
+      format_src(3, 3, code)
     end
+    
 
     def java_get_empty_declaration(types, is_reference_type = false)
       if types.respond_to? :referenced_types
@@ -365,15 +420,6 @@ EOS2
       end
     end
     
-    def java_serialize_complex(field)
-      types = field.referenced_types
-      as = [
-            "// Serialize #{field.type} '#{field.name}'",
-            java_serialize_internal(field.name, types)
-           ]
-      format_src(2, 1, as, "\t")
-    end
-
     def java_serialize_internal(var, types)
       if types.respond_to? :first
         case types.first
@@ -416,15 +462,6 @@ EOS2
           raise "Missing code generation case #{types}"
         end
       end
-    end
-
-    def java_deserialize_complex(field)
-      types = field.referenced_types
-      as = [
-            "// Deserialize #{field.type} '#{field.name}'",
-            java_deserialize_internal("this.#{field.name}", types)
-           ]
-      format_src(2, 1, as, "\t")
     end
 
     def java_deserialize_internal(var, types)
@@ -487,13 +524,12 @@ EOS2
     def generate_code(structs, opts)
       $debug_java = true if opts[:debug]
       base_template = Erubis::Eruby.new(java_base_class_template_str)
-      class_template = Erubis::Eruby.new(java_class_template_str)
       keys = structs.keys.sort
       src = keys.map do |k|
         ss = structs[k]
-        # TODO: Should we merge different versions and deduce deprecated methods, warn for incompatible changes, etc?
-        raise "Duplicate definitions of struct #{k}" if ss.size > 1
-        class_template.result( c: ss.first, this: self )
+        # Check different aspects the the structs
+        vss = sanity_check(ss)
+        java_class_template(StructHandler.new(vss))
       end
     
       # User defined super class?
@@ -511,7 +547,7 @@ EOS2
     end
   
     def java_get_begin_module(opts)
-      str = ""
+      str = "#{get_header_comment}\n\n"
       str << "package #{opts[:package]};" if opts[:package]
       str << get_java_imports
       str << "\n\n"

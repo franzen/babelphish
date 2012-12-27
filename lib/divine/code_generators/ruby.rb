@@ -267,6 +267,7 @@ module Divine
         :indent,
         "",
         
+        # PROPERTIES
         if sh.field_names.size > 0
           "attr_accessor :struct_version, #{sh.field_names.map {|n| ":#{n}" }.join(', ')}"
         else
@@ -361,15 +362,6 @@ module Divine
       end
     end
 
-    def ruby_serialize_complex(field)
-      types = field.referenced_types
-      as = [
-            "# Serialize #{field.type} '#{field.name}'",
-            ruby_serialize_internal(field.name, types)
-           ]
-      format_src(6, 3, as)
-    end
-
     def ruby_serialize_internal(var, types)
       if types.respond_to? :first
         case types.first
@@ -409,15 +401,6 @@ module Divine
           raise "Missing code generation case #{types}"
         end
       end
-    end
-
-    def ruby_deserialize_complex(field)
-      types = field.referenced_types
-      as = [
-            "# Deserialize #{field.type} '#{field.name}'",
-            ruby_deserialize_internal("@#{field.name}", types)
-           ]
-      format_src(6, 3, as)
     end
 
     def ruby_deserialize_internal(var, types)
