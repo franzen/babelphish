@@ -71,6 +71,15 @@ BabelHelper.prototype.read_int32 = function (data) {
     return (data.getbyte() * (256*256*256)) + this.read_int24(data);
 };
 
+BabelHelper.prototype.read_sint32 = function (data) {
+    // return (data.getbyte() << 24) | this.read_int24(data); // See notes about numbers above
+    var num = (data.getbyte() * (256*256*256)) + this.read_int24(data);
+    if (num > (Math.pow(2, 32 - 1) -1) ){
+      return num - Math.pow(2, 32);
+    }
+    return num;
+};
+
 BabelHelper.prototype.read_binary = function (data) {
     return data.read(this.read_int32(data));
 };
@@ -149,6 +158,17 @@ BabelHelper.prototype.write_int32 = function (v, out) {
       this.raise_error("Too large int32 number: " + v);
     if(v < 0)
       this.raise_error("a negative number passed  to int32 number: " + v);
+    this.write_int8(v >> 24 & 0xFF, out);
+    this.write_int24(v & 0xFFFFFF, out);
+}
+
+BabelHelper.prototype.write_sint32 = function (v, out) {
+    var max = Math.pow(2, 32 - 1) - 1;
+    var min = Math.pow(2, 32 - 1) - Math.pow(2, 32);
+    if (v > max) 			// Max  2.147.483.647
+      this.raise_error("Too large sInt32 number: " + v + ", Max = " + max);
+    if(v < min)				// Min -2.147.483.648
+      this.raise_error("Too small sInt32 number: " + v + ", Min = " + min);
     this.write_int8(v >> 24 & 0xFF, out);
     this.write_int24(v & 0xFFFFFF, out);
 }

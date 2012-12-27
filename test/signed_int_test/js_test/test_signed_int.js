@@ -396,72 +396,34 @@ BabelHelper.prototype.raise_error = function (msg) {
 }
 
 
-// ------------------------------------------------------------ BinaryTree
-function BinaryTree() {
+// ------------------------------------------------------------ SignedInt
+function SignedInt() {
    BabelHelper.call(this);  
-   this.root_node = [];
+   this.list1 = [];
 }
 
 // Inherit BabelHelper
-BinaryTree.prototype = new BabelHelper();
+SignedInt.prototype = new BabelHelper();
  
 // Correct the constructor pointer because it points to BabelHelper
-BinaryTree.prototype.constructor = BinaryTree;
+SignedInt.prototype.constructor = SignedInt;
 
-// Define the methods of BinaryTree
-BinaryTree.prototype.deserialize = function (data) {
-    // Deserialize list 'root_node'
-    this.root_node = [];
+// Define the methods of SignedInt
+SignedInt.prototype.deserialize = function (data) {
+    // Deserialize list 'list1'
+    this.list1 = [];
     var var_100 = this.read_int32(data);
     for(var var_102=0; var_102<var_100; var_102++) {
-        var var_101 = new Node();
-        var_101.deserialize(data);
-        this.root_node.push(var_101);
+        var var_101 = this.read_sint32(data);
+        this.list1.push(var_101);
     }
 }
 
-BinaryTree.prototype.serialize_internal = function(out) {
-    // Serialize list 'root_node'
-    this.write_int32(this.root_node.length, out);
-    for(var var_104=0; var_104<this.root_node.length; var_104++) {
-        var var_103 = this.root_node[var_104];
-        var_103.serialize_internal(out)
-    }
-}
-
-
-// ------------------------------------------------------------ Node
-function Node() {
-   BabelHelper.call(this);  
-   this.i32 = 0;
-   this.next_node = [];
-}
-
-// Inherit BabelHelper
-Node.prototype = new BabelHelper();
- 
-// Correct the constructor pointer because it points to BabelHelper
-Node.prototype.constructor = Node;
-
-// Define the methods of Node
-Node.prototype.deserialize = function (data) {
-   this.i32 = this.read_int32(data);
-    // Deserialize list 'next_node'
-    this.next_node = [];
-    var var_105 = this.read_int32(data);
-    for(var var_107=0; var_107<var_105; var_107++) {
-        var var_106 = new Node();
-        var_106.deserialize(data);
-        this.next_node.push(var_106);
-    }
-}
-
-Node.prototype.serialize_internal = function(out) {
-   this.write_int32(this.i32, out);
-    // Serialize list 'next_node'
-    this.write_int32(this.next_node.length, out);
-    for(var var_109=0; var_109<this.next_node.length; var_109++) {
-        var var_108 = this.next_node[var_109];
-        var_108.serialize_internal(out)
+SignedInt.prototype.serialize_internal = function(out) {
+    // Serialize list 'list1'
+    this.write_int32(this.list1.length, out);
+    for(var var_104=0; var_104<this.list1.length; var_104++) {
+        var var_103 = this.list1[var_104];
+        this.write_sint32(var_103, out)
     }
 }

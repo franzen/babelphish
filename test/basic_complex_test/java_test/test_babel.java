@@ -36,6 +36,10 @@ abstract class BabelBase  {
 		return (data.read() << 24) | readInt24(data);
 	}
 
+	protected int readSint32(ByteArrayInputStream data) {
+		return (data.read() << 24) | readInt24(data);
+	}
+
 	protected boolean readBool(ByteArrayInputStream data) {
 		return readInt8(data) == 1;
 	}
@@ -133,6 +137,16 @@ abstract class BabelBase  {
 			raiseError("Too large int32 number: " + v);
 		}else if(v < 0){
 			raiseError("a negative number passed  to int32 number: " + v);
+		}
+		writeInt8((int) ((v >> 24) & 0xFF), out);
+		writeInt24((int) (v & 0xFFFFFF), out);
+	}
+
+        protected void writeSint32(int v, ByteArrayOutputStream out) {
+		if (v > Integer.MAX_VALUE) { 		// Max  2.147.483.647
+			raiseError("Too large sInt32 number: " + v + ", Max = " + Integer.MAX_VALUE);
+		}else if(v < Integer.MIN_VALUE){ 	// Min -2.147.483.648
+			raiseError("Too small sInt32 number: " + v + ", Min = " + Integer.MIN_VALUE);
 		}
 		writeInt8((int) ((v >> 24) & 0xFF), out);
 		writeInt24((int) (v & 0xFFFFFF), out);

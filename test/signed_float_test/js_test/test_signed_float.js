@@ -80,6 +80,21 @@ BabelHelper.prototype.read_sint32 = function (data) {
     return num;
 };
 
+BabelHelper.prototype.read_sint64 = function (data) {
+    var x = this.read_int32(data);
+    var y = this.read_int32(data);
+    console.log(x);
+    console.log(y);
+    console.log(x * 256);
+    console.log(x * 256 * 265);
+    console.log(x * 256 * 265 * 265);
+    //console.log(num);
+    //if (num > (Math.pow(2, 54 - 1) -1) ){
+    //  return num - Math.pow(2, 54);
+    //}
+    return 0;
+}
+
 BabelHelper.prototype.read_binary = function (data) {
     return data.read(this.read_int32(data));
 };
@@ -163,7 +178,7 @@ BabelHelper.prototype.write_int32 = function (v, out) {
 }
 
 BabelHelper.prototype.write_sint32 = function (v, out) {
-    var max = Math.pow(2, 32 - 1) - 1;
+    var max = Math.pow(2, 32 - 1) -1;
     var min = Math.pow(2, 32 - 1) - Math.pow(2, 32);
     if (v > max) 			// Max  2.147.483.647
       this.raise_error("Too large sInt32 number: " + v + ", Max = " + max);
@@ -171,6 +186,24 @@ BabelHelper.prototype.write_sint32 = function (v, out) {
       this.raise_error("Too small sInt32 number: " + v + ", Min = " + min);
     this.write_int8(v >> 24 & 0xFF, out);
     this.write_int24(v & 0xFFFFFF, out);
+}
+
+BabelHelper.prototype.write_sint64 = function (v, out) {
+    var max =  Math.pow(2, 53);
+    var min = -Math.pow(2, 53);
+    if (v > max)			// Max  9,007,199,254,740,992
+      this.raise_error("Too large sInt64 number: " + v + ", Max = " + max);
+    if (v < min)	 		// Min -9,007,199,254,740,992
+      this.raise_error("Too small sInt64 number: " + v + ", Min = " + min);
+    binStr = v.toString(2);
+    byte1  = binStr.substr(0, binStr.length - 32);
+    byte2  = binStr.substr(binStr.length - 32, binStr.length);
+    int1   = byte1.parseInt(2);
+    int2   = byte2.parseInt(2);
+    console.log("byte1 = " + byte1);
+    console.log("byte2 = " + byte2);
+    console.log("int1 = " + int1);
+    console.log("int2 = " + int2);
 }
 
 BabelHelper.prototype.write_bool = function (v, out) {
@@ -396,72 +429,34 @@ BabelHelper.prototype.raise_error = function (msg) {
 }
 
 
-// ------------------------------------------------------------ BinaryTree
-function BinaryTree() {
+// ------------------------------------------------------------ SignedFloat
+function SignedFloat() {
    BabelHelper.call(this);  
-   this.root_node = [];
+   this.list1 = [];
 }
 
 // Inherit BabelHelper
-BinaryTree.prototype = new BabelHelper();
+SignedFloat.prototype = new BabelHelper();
  
 // Correct the constructor pointer because it points to BabelHelper
-BinaryTree.prototype.constructor = BinaryTree;
+SignedFloat.prototype.constructor = SignedFloat;
 
-// Define the methods of BinaryTree
-BinaryTree.prototype.deserialize = function (data) {
-    // Deserialize list 'root_node'
-    this.root_node = [];
+// Define the methods of SignedFloat
+SignedFloat.prototype.deserialize = function (data) {
+    // Deserialize list 'list1'
+    this.list1 = [];
     var var_100 = this.read_int32(data);
     for(var var_102=0; var_102<var_100; var_102++) {
-        var var_101 = new Node();
-        var_101.deserialize(data);
-        this.root_node.push(var_101);
+        var var_101 = this.read_float32(data);
+        this.list1.push(var_101);
     }
 }
 
-BinaryTree.prototype.serialize_internal = function(out) {
-    // Serialize list 'root_node'
-    this.write_int32(this.root_node.length, out);
-    for(var var_104=0; var_104<this.root_node.length; var_104++) {
-        var var_103 = this.root_node[var_104];
-        var_103.serialize_internal(out)
-    }
-}
-
-
-// ------------------------------------------------------------ Node
-function Node() {
-   BabelHelper.call(this);  
-   this.i32 = 0;
-   this.next_node = [];
-}
-
-// Inherit BabelHelper
-Node.prototype = new BabelHelper();
- 
-// Correct the constructor pointer because it points to BabelHelper
-Node.prototype.constructor = Node;
-
-// Define the methods of Node
-Node.prototype.deserialize = function (data) {
-   this.i32 = this.read_int32(data);
-    // Deserialize list 'next_node'
-    this.next_node = [];
-    var var_105 = this.read_int32(data);
-    for(var var_107=0; var_107<var_105; var_107++) {
-        var var_106 = new Node();
-        var_106.deserialize(data);
-        this.next_node.push(var_106);
-    }
-}
-
-Node.prototype.serialize_internal = function(out) {
-   this.write_int32(this.i32, out);
-    // Serialize list 'next_node'
-    this.write_int32(this.next_node.length, out);
-    for(var var_109=0; var_109<this.next_node.length; var_109++) {
-        var var_108 = this.next_node[var_109];
-        var_108.serialize_internal(out)
+SignedFloat.prototype.serialize_internal = function(out) {
+    // Serialize list 'list1'
+    this.write_int32(this.list1.length, out);
+    for(var var_104=0; var_104<this.list1.length; var_104++) {
+        var var_103 = this.list1[var_104];
+        this.write_float32(var_103, out)
     }
 }

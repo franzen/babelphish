@@ -27,6 +27,15 @@ module BabelTest
       (data.getbyte << 24) | read_int24(data)
     end
 
+    def read_sint32(data)
+      max = (2** (32 - 1)) - 1
+      num = (data.getbyte << 24) | read_int24(data)
+      if num > max
+        return num - 2** 32
+      end
+      return num
+    end
+
     def read_bool(data)
       read_int8(data) == 1
     end
@@ -101,6 +110,16 @@ module BabelTest
       v = v.to_i
       raise_error "Too large int32 number: #{v}" if v > 0xFFFFFFFF # Max 4.294.967.295
       raise_error "a negative number passed  to int32 number: #{v}" if v < 0
+      write_int8( v >> 24 & 0xFF, out)
+      write_int24( v & 0xFFFFFF, out)
+    end
+
+    def write_sint32(v, out)
+      v = v.to_i
+      max = (2** (32 - 1)) - 1
+      min = (2** (32 - 1) ) - (2** 32)
+      raise_error "Too large Sint32 number: #{v} , Max = #{max}" if v > max # Max  2.147.483.647
+      raise_error "Too small sInt32 number: #{v} , Min = #{min}" if v < min # Min -2.147.483.648
       write_int8( v >> 24 & 0xFF, out)
       write_int24( v & 0xFFFFFF, out)
     end

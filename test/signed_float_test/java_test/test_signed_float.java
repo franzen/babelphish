@@ -40,6 +40,10 @@ abstract class BabelBase  {
 		return (data.read() << 24) | readInt24(data);
 	}
 
+	protected long readSint64(ByteArrayInputStream data) {
+		return (readInt32(data) << 32) | (readInt32(data) & 0xFFFFFFFFL);
+	}
+
 	protected boolean readBool(ByteArrayInputStream data) {
 		return readInt8(data) == 1;
 	}
@@ -152,6 +156,16 @@ abstract class BabelBase  {
 		writeInt24((int) (v & 0xFFFFFF), out);
 	}
 
+	protected void writeSint64(long v, ByteArrayOutputStream out) {
+		if (v > Long.MAX_VALUE) { 			// Max  9,223,372,036,854,775,807
+			raiseError("Too large sInt64 number: " + v + ", Max = " + Integer.MAX_VALUE);
+		}else if(v < Long.MIN_VALUE){ 		// Min -9,223,372,036,854,775,807
+			raiseError("Too small sInt64 number: " + v + ", Min = " + Integer.MIN_VALUE);
+		}
+		writeInt32(((v >> 32) & 0xFFFFFFFFL), out);
+		writeInt32( (v & 0xFFFFFFFFL) , out);
+	}
+
 	protected void writeBool(boolean v, ByteArrayOutputStream out) {
 		writeInt8(v ? 1 : 0, out);
 	}
@@ -258,58 +272,27 @@ abstract class BabelBase  {
 }
 
 
-class BinaryTree extends BabelBase {
-	public ArrayList<Node> root_node = new ArrayList<Node>();
+class SignedFloat extends BabelBase {
+	public ArrayList<Float> list1 = new ArrayList<Float>();
 
 	@Override
 	void serializeInternal(ByteArrayOutputStream baos) throws IOException {
-		// Serialize list 'root_node'
-		writeInt32(root_node.size(), baos);
-		for(int var_101=0; var_101<root_node.size(); var_101++) {
-			Node var_100 = root_node.get(var_101);
-			var_100.serializeInternal(baos);
+		// Serialize list 'list1'
+		writeInt32(list1.size(), baos);
+		for(int var_101=0; var_101<list1.size(); var_101++) {
+			float var_100 = list1.get(var_101);
+			writeFloat32(var_100, baos);
 		}
 	}
 
 	@Override
 	public void deserialize(ByteArrayInputStream bais) throws IOException {
-		// Deserialize list 'root_node'
-		this.root_node = new ArrayList<Node>();
+		// Deserialize list 'list1'
+		this.list1 = new ArrayList<Float>();
 		int var_102 = (int)this.readInt32(bais);
 		for(int var_104=0; var_104<var_102; var_104++) {
-			Node var_103 = new Node();
-			var_103.deserialize(bais);
-			this.root_node.add(var_103);
-		}
-	}
-}
-
-
-class Node extends BabelBase {
-	public long i32 = 0L;
-	public ArrayList<Node> next_node = new ArrayList<Node>();
-
-	@Override
-	void serializeInternal(ByteArrayOutputStream baos) throws IOException {
-		writeInt32(this.i32, baos);
-		// Serialize list 'next_node'
-		writeInt32(next_node.size(), baos);
-		for(int var_106=0; var_106<next_node.size(); var_106++) {
-			Node var_105 = next_node.get(var_106);
-			var_105.serializeInternal(baos);
-		}
-	}
-
-	@Override
-	public void deserialize(ByteArrayInputStream bais) throws IOException {
-		this.i32 = readInt32(bais);
-		// Deserialize list 'next_node'
-		this.next_node = new ArrayList<Node>();
-		int var_107 = (int)this.readInt32(bais);
-		for(int var_109=0; var_109<var_107; var_109++) {
-			Node var_108 = new Node();
-			var_108.deserialize(bais);
-			this.next_node.add(var_108);
+			float var_103 = readFloat32(bais);
+			this.list1.add(var_103);
 		}
 	}
 }

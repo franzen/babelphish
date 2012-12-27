@@ -36,6 +36,20 @@ module BabelTest
       return num
     end
 
+    def read_sint64(data)
+      max = (2** (64 - 1)) - 1
+      num = (read_int32(data) << 32) | (read_int32(data) & 0xFFFFFFFF);
+      if num > max
+        return num - 2** 64
+      end
+      return num
+    end
+     
+    def read_float32(data)
+      v = data.read(4) # read 4 bytes for 32-bit float number
+      v.bytes.map { |byte| byte.to_i.chr }.reverse.join.unpack('f')[0].round(6)
+    end
+
     def read_bool(data)
       read_int8(data) == 1
     end
@@ -122,6 +136,22 @@ module BabelTest
       raise_error "Too small sInt32 number: #{v} , Min = #{min}" if v < min # Min -2.147.483.648
       write_int8( v >> 24 & 0xFF, out)
       write_int24( v & 0xFFFFFF, out)
+    end
+
+    def write_sint64(v, out)
+      v = v.to_i
+      max = (2** (64 - 1)) - 1
+      min = (2** (64 - 1) ) - (2** 64)
+      raise_error "Too large Sint32 number: #{v} , Max = #{max}" if v > max # Max  2.147.483.647
+      raise_error "Too small sInt32 number: #{v} , Min = #{min}" if v < min # Min -2.147.483.648
+      write_int32( v >> 32 & 0xFFFFFFFF, out)
+      write_int32( v & 0xFFFFFFFF, out)
+    end
+
+    def write_float32(v, out)
+      v = v.to_f
+      bytes = [v].pack('f') # return each byte as hex
+      write_int32( ( (bytes[3].ord << 24) | (bytes[2].ord << 16) | (bytes[1].ord << 8) | (bytes[0].ord) ), out)
     end
 
     def write_bool(v, out)
@@ -253,67 +283,31 @@ module BabelTest
     
 
 
-  class BinaryTree < BabelBase
-      attr_accessor :root_node
+  class SignedFloat < BabelBase
+      attr_accessor :list1
 
       def initialize()
           super
-          @root_node ||= []
+          @list1 ||= []
       end
 
       def serialize_internal(out)
         print "+"
-        # Serialize list 'root_node'
-      write_int32(root_node.size, out)
-      root_node.each do |var_100|
-         var_100.serialize_internal(out)
+        # Serialize list 'list1'
+      write_int32(list1.size, out)
+      list1.each do |var_100|
+         write_float32(var_100, out)
       end
       end
 
       def deserialize(data)
         print "-"
-        # Deserialize list 'root_node'
-      @root_node = []
+        # Deserialize list 'list1'
+      @list1 = []
       var_101 = read_int32(data)
       (1..var_101).each do
-         var_102 = Node.new
-         var_102.deserialize(data)
-         @root_node << var_102
-      end
-      end
-  end
-    
-
-
-  class Node < BabelBase
-      attr_accessor :i32, :next_node
-
-      def initialize()
-          super
-          @i32 ||= 0
-          @next_node ||= []
-      end
-
-      def serialize_internal(out)
-        print "+"
-        write_int32(i32, out)
-        # Serialize list 'next_node'
-      write_int32(next_node.size, out)
-      next_node.each do |var_103|
-         var_103.serialize_internal(out)
-      end
-      end
-
-      def deserialize(data)
-        print "-"
-        @i32 = read_int32(data)
-        # Deserialize list 'next_node'
-      @next_node = []
-      var_104 = read_int32(data)
-      (1..var_104).each do
-         var_105 = Node.new
-         var_105.deserialize(data)
-         @next_node << var_105
+         var_102 = read_float32(data)
+         @list1 << var_102
       end
       end
   end
