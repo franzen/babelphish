@@ -105,7 +105,7 @@ end
 
 struct 'Foobar', version: 2 do
   int8 :foo
-  int8 :bar # We added a new filed in version 2 of Foobar
+  int8 :bar # We added a new field named 'bar' in version 2 of Foobar
 end
 
 Divine::CodeGenerator.new.generate(:ruby, file: 'test_babel.rb')
@@ -116,7 +116,7 @@ There are some basic rules regarding versioning of structs
 
 * A versioned struct defineds all fields you want to serialize/deserialize
 * You can delete and add fields as you whish between versions
-* You are not allowed to change type of a variable between versions
+* You are not allowed to change type of a defined variable between versions
 * You  cannot have a bigger version number than 255
 * The class that represents the struct also defines a 'struct_version' that keeps the current version of the struct
 

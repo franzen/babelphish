@@ -35,3 +35,8 @@ test/ipv6_test/ruby_test/test_ipv6.rb
 test/signed_int_test/ruby_test/test_signed_int.rb
 test/signed_int_test/js_test/bin.babel.js
 test/signed_int_test/ruby_test/bin.babel.rb
+test/basic_complex_test/java_test/test_babel.java
+test/binaryTree_test/java_test/test_binaryTree.java
+test/complex_test/java_test/test_complex.java
+test/ipv6_test/java_test/test_ipv6.java
+test/signed_int_test/java_test/test_signed_int.java
