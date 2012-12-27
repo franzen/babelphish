@@ -292,7 +292,7 @@ EOS2
       if types.respond_to? :referenced_types
         java_get_empty_declaration(types.referenced_types)
 
-      elsif types.respond_to? :first
+      elsif types.respond_to?(:first) && types.size > 1
         case types.first
         when :list
           "new #{java_get_type_declaration(types, true)}()"
@@ -301,6 +301,9 @@ EOS2
         else
           raise "Missing empty declaration for #{types}"
         end
+
+      elsif types.respond_to?(:first) && types.size == 1
+        java_get_empty_declaration(types.first, is_reference_type)
 
       else
         case types
@@ -326,7 +329,7 @@ EOS2
       if types.respond_to? :referenced_types
         java_get_type_declaration(types.referenced_types, is_reference_type)
 
-      elsif types.respond_to? :first
+      elsif types.respond_to?(:first) && types.size > 1
         case types.first
         when :list
           subtypes = java_get_type_declaration(types[1], true)
@@ -338,6 +341,9 @@ EOS2
         else
           raise "Missing serialization for #{types}"
         end
+        
+      elsif types.respond_to?(:first) && types.size == 1
+        java_get_type_declaration(types.first, is_reference_type)
 
       else
         case types
@@ -506,28 +512,25 @@ EOS2
     end
   
     def java_get_begin_module(opts)
-      if opts[:package]
-        [
-          "package #{opts[:package]};\n",
-          "import java.io.ByteArrayInputStream;",
-          "import java.io.ByteArrayOutputStream;",
-          "import java.io.IOException;",
-          "import java.util.ArrayList;",
-          "import java.util.HashMap;",
-          "import java.util.regex.Pattern;",
-          "import java.nio.charset.Charset;\n\n"
-        ].join("\n")
-      else 
-        [
-          "import java.io.ByteArrayInputStream;",
-          "import java.io.ByteArrayOutputStream;",
-          "import java.io.IOException;",
-          "import java.util.ArrayList;",
-          "import java.util.HashMap;",
-          "import java.util.regex.Pattern;",
-          "import java.nio.charset.Charset;\n\n"
-        ].join("\n")
-      end
+      str = ""
+      str << "package #{opts[:package]};" if opts[:package]
+      str << get_java_imports
+      str << "\n\n"
+      return str
+    end
+    
+    def get_java_imports
+      [
+        "java.io.ByteArrayInputStream",
+        "java.io.ByteArrayOutputStream",
+        "java.io.IOException",
+        "java.util.ArrayList",
+        "java.util.HashMap",
+        "java.util.regex.Pattern",
+        "java.nio.charset.Charset"
+        ].map do |i|
+          "import #{i};"
+        end.join("\n") 
     end
   end
 

@@ -2,7 +2,8 @@ module Divine
   $all_structs = {}
 
   class StructDefinition
-    def initialize(type, args)
+    def initialize(owner, type, args)
+      @owner = owner
       @type = type
       @args = args
     end
@@ -14,12 +15,20 @@ module Divine
     def type
       @type
     end
+    
+    def version 
+      @owner.version
+    end
+    
+    def to_s
+      "#{@owner.name}: #{self.type} #{self.name} (#{self.class.name}, #{@args.inspect})"
+    end
   end
 
   class SimpleDefinition < StructDefinition
     def simple?; true; end
     def referenced_types
-      @type
+      [@type]
     end
   end
 
@@ -106,10 +115,10 @@ module Divine
     # Name = name of the struct
     # Version = struct version (not currently used)
     # Fields = All defined fields
-    attr_reader :name, :version, :fields
+    attr_reader :name, :properties, :fields
 
-    def initialize(name, version)
-      @version = version
+    def initialize(name, ps)
+      @properties = ps
       @name = name.to_sym
       @fields = []
       unless @name == :_inline_
@@ -119,34 +128,75 @@ module Divine
     end
 
     #
+    # Get the version of the struct 
+    #
+    def version
+      if properties && properties[:version]
+        properties[:version].to_i
+      else
+        1
+      end
+    rescue => e
+      raise "Failed to get version number from '#{name}': #{properties.inspect}\n#{e}"
+    end
+    
+    #
+    # Is the struct freezed? I.e. no changes are allowed
+    #
+    def freezed?
+      nil != freeze_signature
+    end
+    
+    #
+    # Get the freeze signature
+    #
+    def freeze_signature
+      if properties && properties[:freeze]
+        properties[:freeze]
+      else
+        nil
+      end
+    end
+
+    #
     # Get all simple fields, i.e. basic types like string, etc
     #
     def simple_fields
-        fields.select(&:simple?)
+      fields.select(&:simple?)
     end
 
     #
     # Get all complex fields, i.e. lists and hashmaps
     #
     def complex_fields
-        fields.reject(&:simple?)
+      fields.reject(&:simple?)
+    end
+
+    #
+    # Get named field
+    #
+    def get_field(name)
+      fields.each do |f|
+        return f if f.name == name
+      end
+      return nil
     end
 
     def method_missing(m, *args, &block)
-      puts "... #{m}"
+      puts "... #{m} #{args.inspect}"
       type = $available_types[m]
       if type
         if block_given?
           puts ".... recursive definition"
-          builder = StructBuilder.new(:_inline_, version)
+          builder = StructBuilder.new(:_inline_, args)
           Docile.dsl_eval(builder, &block)
           args << builder
         end
         if @name == :_inline_
           # Pad the _inline_ name to anonymous inner types
-          @fields << type.new(m, [@name] + args)
+          @fields << type.new(self, m, [@name] + args)
         else
-          @fields << type.new(m, args)
+          @fields << type.new(self, m, args)
         end
         #puts "... adding #{m} to #{name}, got #{fields} ..."
       else

@@ -1,6 +1,12 @@
 module Divine
 
   class RubyHelperMethods < BabelHelperMethods
+    def get_header_comment
+      get_header_comment_text.map do |s|
+        "# #{s}"
+      end.join("\n")
+    end
+    
     def ruby_base_class_template_str
       %q{
   class BabelBase<%= toplevel_class %>
@@ -255,42 +261,90 @@ module Divine
     }
     end
 
-    def ruby_class_template_str
-      %q{
-  class <%= c.name %> < BabelBase
-  <% unless c.fields.empty? %>
-      attr_accessor <%= c.fields.map { |x| ":#{x.name}" }.join(', ') %>
+    def ruby_class_template(sh)
+      code = [
+        "class #{sh.name} < BabelBase",
+        :indent,
+        "",
+        
+        if sh.field_names.size > 0
+          "attr_accessor :struct_version, #{sh.field_names.map {|n| ":#{n}" }.join(', ')}"
+        else
+          "attr_accessor :struct_version"
+        end, "",
 
-      def initialize()
-          super
-  <% c.fields.each do |f| %>
-          @<%= f.name %> ||= <%= this.ruby_get_empty_declaration(f) %>
-  <% end %>
-      end
-  <% end %>
 
-      def serialize_internal(out)
-        print "+"
-        <% c.simple_fields.each do |f| %>
-        write_<%= f.type %>(<%= f.name %>, out)
-        <% end %>
-        <% c.complex_fields.each do |f| %>
-  <%= this.ruby_serialize_complex f %>
-        <% end %>
-      end
-
-      def deserialize(data)
-        print "-"
-        <% c.simple_fields.each do |f| %>
-        @<%= f.name %> = read_<%= f.type %>(data)
-        <% end %>
-        <% c.complex_fields.each do |f| %>
-  <%= this.ruby_deserialize_complex f %>
-        <% end %>
-      end
-  end
-    }
+        # INITIALIZE
+        "def initialize()",
+        :indent,
+        "super",
+        "@struct_version ||= #{sh.latest_version}",
+        sh.field_names.map do |fn|
+          "@#{fn} ||= #{ruby_get_empty_declaration(sh.field(fn).first)}"
+        end,
+        :deindent,
+        "end", "",
+  
+        # SERiALIZE INTERNAL
+        "def serialize_internal(out)",
+        :indent,
+        "write_int8(@struct_version, out)",
+        sh.structs.map do |s|
+          [
+            "if @struct_version == #{s.version}",
+            :indent,
+            s.simple_fields.map do |f|
+              "write_#{f.type}(#{f.name}, out)"
+            end,
+            s.complex_fields.map do |f|
+              [
+                "", "# Serialize #{f.type} '#{f.name}'",
+                ruby_serialize_internal(f.name,  f.referenced_types)
+              ]
+            end,
+            "return",
+            :deindent,
+            "end", ""
+          ]
+        end, "",
+        "raise \"Unsupported version #\{@struct_version\} for type '#{sh.name}'\"",
+        :deindent,
+        "end", "",
+        
+        # DESERIALIZE
+        "def deserialize(data)",
+        :indent,
+        "@struct_version = read_int8(data)",
+        sh.structs.map do |s|
+          [
+            "if @struct_version == #{s.version}",
+            :indent,
+            s.simple_fields.map do |f|
+                "@#{f.name} = read_#{f.type}(data)"
+            end,
+            s.complex_fields.map do |f|
+              [
+                "", "# Read #{f.type} '#{f.name}'",
+                ruby_deserialize_internal("@#{f.name}",  f.referenced_types)
+              ]
+            end,
+            "return",
+            :deindent,
+            "end"
+          ]
+        end, "",
+        "raise \"Unsupported version #\{@struct_version\} for type '#{sh.name}'\"",
+        :deindent,
+        "end", "",
+        
+        
+        # END OF CLASS
+        :deindent,
+        "end"        
+        ]
+      format_src(0, 3, code)
     end
+
 
     def ruby_get_empty_declaration(field)
       case field.type
@@ -427,19 +481,18 @@ module Divine
     def generate_code(structs, opts)
       pp opts
       base_template = Erubis::Eruby.new(ruby_base_class_template_str)
-      class_template = Erubis::Eruby.new(ruby_class_template_str)
       keys = structs.keys.sort
       src = keys.map do |k|
         ss = structs[k]
-        # TODO: Should we merge different versions and deduce deprecated methods, warn for incompatible changes, etc?
-        raise "Duplicate definitions of struct #{k}" if ss.size > 1
-        class_template.result( c: ss.first, this: self )
+        # Check different aspects the the structs
+        vss = sanity_check(ss)
+        ruby_class_template(StructHandler.new(vss))
       end
     
       # User defined super class?
       toplevel = opts[:parent_class] || nil
       toplevel = " < #{toplevel}" if toplevel 
-      return [{file: opts[:file], src: "#{ruby_get_begin_module(opts)}#{base_template.result({ toplevel_class: toplevel })}\n\n#{src.join("\n\n")}#{ruby_get_end_module(opts)}"}]
+      return [{file: opts[:file], src: "#{get_header_comment}\n#{ruby_get_begin_module(opts)}#{base_template.result({ toplevel_class: toplevel, this: self })}\n\n#{src.join("\n\n")}#{ruby_get_end_module(opts)}"}]
     end
   
     def ruby_get_begin_module(opts)
