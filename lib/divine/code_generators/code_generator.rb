@@ -142,7 +142,7 @@ module Divine
       raise "Unknown target language: #{target}" unless gen
       puts "Generating code for #{target}"
       src = gen.generate_code($all_structs, opts)
-      target_dir = opts[:target_dir] + "/"
+      target_dir = (opts[:target_dir] || ".") + "/"
 
       if opts[:package]
         path = target_dir + opts[:package].gsub(/\./, "/")

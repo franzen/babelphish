@@ -94,6 +94,32 @@ c2.deserialize(new BabelDataReader(ca));
 console.log(c2);
 ```
 
+### Versioning
+```ruby
+require 'divine'
+
+struct 'Foobar' do # Default version is '1'
+  int8 :foo
+end
+
+
+struct 'Foobar', version: 2 do
+  int8 :foo
+  int8 :bar # We added a new filed in version 2 of Foobar
+end
+
+Divine::CodeGenerator.new.generate(:ruby, file: 'test_babel.rb')
+Divine::CodeGenerator.new.generate(:java, file: 'test_babel.java')
+```
+
+There are some basic rules regarding versioning of structs
+
+* A versioned struct defineds all fields you want to serialize/deserialize
+* You can delete and add fields as you whish between versions
+* You are not allowed to change type of a variable between versions
+* You  cannot have a bigger version number than 255
+* The class that represents the struct also defines a 'struct_version' that keeps the current version of the struct
+
 
 ## Installation
 
