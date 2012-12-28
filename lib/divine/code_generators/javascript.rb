@@ -98,6 +98,22 @@ DivineHelper.prototype.read_sint32 = function (data) {
     return num;
 };
 
+DivineHelper.prototype.read_sint64 = function (data) {
+    var part1 = this.read_int32(data).toString(2);	// read first part of 32 bit number
+    var part2 = this.read_int32(data).toString(2);  	// read second part of 32 bit.
+    if (part1.length < 32){ 				// deal with positive number
+      part2 = Array(32 - part2.length + 1).join("0") + part2;
+      return parseInt((part1 + part2), 2);
+    }else{						// deal with negative number
+      part1 = part1.substr(11,part1.length);
+      part2 = Array(32 - part2.length + 1).join("0") + part2;
+      var binStr = part1 + part2;
+      binStr = binStr.replace(/1/g,'f').replace(/0/g,'1').replace(/f/g,'0');
+      val    = parseInt(binStr, 2) + 1;
+      return val * -1;
+    }
+}
+
 DivineHelper.prototype.read_binary = function (data) {
     return data.read(this.read_int32(data));
 };
@@ -189,6 +205,29 @@ DivineHelper.prototype.write_sint32 = function (v, out) {
       this.raise_error("Too small sInt32 number: " + v + ", Min = " + min);
     this.write_int8(v >> 24 & 0xFF, out);
     this.write_int24(v & 0xFFFFFF, out);
+}
+
+DivineHelper.prototype.write_sint64 = function (v, out) {
+    var max =  Math.pow(2, 53) - 1;
+    var min = -Math.pow(2, 53);
+    if (v > max)			// Max  9,007,199,254,740,991
+      this.raise_error("Too large sInt64 number: " + v + ", Max = " + max);
+    if (v < min)	 		// Min -9,007,199,254,740,992
+      this.raise_error("Too small sInt64 number: " + v + ", Min = " + min);
+    
+    binStr = v.toString(2);
+    if (v < 0){
+      invBinStr = binStr.replace('-','').replace(/1/g,'f').replace(/0/g,'1').replace(/f/g,'0');
+      invBinStr = (parseInt(invBinStr, 2) + 1).toString(2);
+      binStr    = Array(binStr.length - invBinStr.length).join("0") + invBinStr;
+      binStr    = Array(64 - binStr.length + 1).join("1") + binStr;
+    }else{
+      binStr    = Array(64 - binStr.length + 1).join("0") + binStr;
+    }
+    part1  = binStr.substr(0, binStr.length - 32);
+    part2  = binStr.substr(binStr.length - 32, binStr.length);
+    this.write_int32(parseInt(part1, 2), out);
+    this.write_int32(parseInt(part2, 2), out);
 }
 
 DivineHelper.prototype.write_bool = function (v, out) {
@@ -505,7 +544,7 @@ EOS
         "[]"
       when :map
         "{}"
-      when :int8, :int16, :int32, :sint32
+      when :int8, :int16, :int32, :sint32, :sint64
         "0"
       when :string, :ip_number
         "\"\""

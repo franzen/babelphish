@@ -48,6 +48,9 @@ module Divine
     end
   end
 
+  class SInteger64Definition < SimpleDefinition
+  end
+
   class SInteger32Definition < SimpleDefinition
   end 
 
@@ -96,6 +99,7 @@ module Divine
 
 
   $available_types = {
+    sint64: SInteger64Definition,
     sint32: SInteger32Definition,
     int32: Integer32Definition,
     int24: Integer24Definition,

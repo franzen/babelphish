@@ -43,6 +43,10 @@ abstract class BabelBase <%= toplevel_class %> {
 		return (data.read() << 24) | readInt24(data);
 	}
 
+	protected long readSint64(ByteArrayInputStream data) {
+		return (readInt32(data) << 32) | (readInt32(data) & 0xFFFFFFFFL);
+	}
+
 	protected boolean readBool(ByteArrayInputStream data) {
 		return readInt8(data) == 1;
 	}
@@ -153,6 +157,16 @@ abstract class BabelBase <%= toplevel_class %> {
 		}
 		writeInt8((int) ((v >> 24) & 0xFF), out);
 		writeInt24((int) (v & 0xFFFFFF), out);
+	}
+
+	protected void writeSint64(long v, ByteArrayOutputStream out) {
+		if (v > Long.MAX_VALUE) { 		// Max  9,223,372,036,854,775,807
+			raiseError("Too large sInt64 number: " + v + ", Max = " + Integer.MAX_VALUE);
+		}else if(v < Long.MIN_VALUE){ 		// Min -9,223,372,036,854,775,807
+			raiseError("Too small sInt64 number: " + v + ", Min = " + Integer.MIN_VALUE);
+		}
+		writeInt32(((v >> 32) & 0xFFFFFFFFL), out);
+		writeInt32( (v & 0xFFFFFFFFL) , out);
 	}
 
 	protected void writeBool(boolean v, ByteArrayOutputStream out) {
@@ -364,7 +378,7 @@ EOS
           is_reference_type ? "new Byte[0]" : "new byte[0]"
         when :int8, :int16, :sint32
           "0"
-        when :int32
+        when :int32, :sint64
           "0L"
         when :string, :ip_number
           "\"\""
@@ -404,7 +418,7 @@ EOS
           is_reference_type ? "Byte[]" : "byte[]"
         when :int8, :int16, :sint32
           is_reference_type ? "Integer" : "int"
-        when :int32
+        when :int32, :sint64
           is_reference_type ? "Long" : "long"
         when :string, :ip_number
           "String"

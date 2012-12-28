@@ -12,13 +12,13 @@ var read = deserialize();
 
 var obj_deser = new SignedInt();
 obj_deser.deserialize(new DivineDataReader(read));
-compare_list(obj_ser.list1, obj_deser.list1);
-//compare_list(obj_ser.list2, obj_deser.list2);
+//compare_list(obj_ser.list1, obj_deser.list1);
+compare_list(obj_ser.list2, obj_deser.list2);
 
 function buildObject(){
   var obj  = new SignedInt();
   obj.list1   = [-1, -2, -3, Math.pow(2, 31)-1, Math.pow(2, 32-1) - Math.pow(2, 32)];
-  //obj.list2   = [-3];
+  obj.list2   = [-1, -2, -3, Math.pow(2, 54-1)-1, Math.pow(2, (54-1)) - Math.pow(2, 54)];
   return obj;
 }
 

@@ -16,6 +16,7 @@ namespace :test  do
     ruby "test/complex_test/ruby_test/ruby_test.rb"
     ruby "test/binaryTree_test/ruby_test/ruby_test.rb"
     ruby "test/basic_complex_test/ruby_test/ruby_test.rb"
+
     system("find . -name 'test*.rb' | xargs rm") # Remove generated source code files
   end
 
@@ -29,6 +30,7 @@ namespace :test  do
     system("node test/binaryTree_test/js_test/js_test.js")
     system("node test/basic_complex_test/js_test/js_testBasic.js")
     system("node test/basic_complex_test/js_test/js_testComplex.js")
+    
     system("find . -name 'test*.js' | xargs rm") # Remove generated source code files
   end
 
@@ -40,7 +42,7 @@ namespace :test  do
 
     system("javac -cp test/java_lib/junit.jar: test/signed_int_test/java_test/*.java")
     system("java -cp test/signed_int_test/java_test/:test/java_lib/junit.jar:. org.junit.runner.JUnitCore JavaTest")
-
+    
     system("javac -cp test/java_lib/junit.jar: test/ipv6_test/java_test/*.java")
     system("java -cp test/ipv6_test/java_test/:test/java_lib/junit.jar:. org.junit.runner.JUnitCore JavaTest")
 

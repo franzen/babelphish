@@ -7,7 +7,7 @@ class TestBabelTestBasic < MiniTest::Unit::TestCase
     puts "Test Signed Int"
     obj_ser = BabelTest::SignedInt.new
     obj_ser.list1  = [-1, -2, -3, 2** (32-1)-1, 2** (32-1) - 2** 32]
-    #obj_ser.list2  = [-1, -2, -3, 2** (64-1)-1, 2** (64-1) - 2** 64]
+    obj_ser.list2  = [-1, -2, -3, 2** (54-1)-1, 2** (54-1) - 2** 54]
     
     ser = obj_ser.serialize
     serialize(ser)

@@ -44,6 +44,15 @@ module Divine
       return num
     end
 
+    def read_sint64(data)
+      max = (2** (64 - 1)) - 1
+      num = (read_int32(data) << 32) | (read_int32(data) & 0xFFFFFFFF);
+      if num > max
+        return num - 2** 64
+      end
+      return num
+    end
+
     def read_bool(data)
       read_int8(data) == 1
     end
@@ -130,6 +139,16 @@ module Divine
       raise_error "Too small sInt32 number: #{v} , Min = #{min}" if v < min # Min -2.147.483.648
       write_int8( v >> 24 & 0xFF, out)
       write_int24( v & 0xFFFFFF, out)
+    end
+
+    def write_sint64(v, out)
+      v = v.to_i
+      max = (2** (64 - 1)) - 1
+      min = (2** (64 - 1) ) - (2** 64)
+      raise_error "Too large Sint32 number: #{v} , Max = #{max}" if v > max # Max  2.147.483.647
+      raise_error "Too small sInt32 number: #{v} , Min = #{min}" if v < min # Min -2.147.483.648
+      write_int32( v >> 32 & 0xFFFFFFFF, out)
+      write_int32( v & 0xFFFFFFFF, out)
     end
 
     def write_bool(v, out)

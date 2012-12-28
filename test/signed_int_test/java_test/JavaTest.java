@@ -35,22 +35,24 @@ public class JavaTest {
 			add(Integer.MIN_VALUE);
 		}};
 		
-		//obj.list2   = new ArrayList<Long>(){{
-		//	add(255L);
-		//	add(-2L);
-		//	add(-3L);
-		//	add(Long.MAX_VALUE);
-		//	add(Long.MIN_VALUE);
-		//}};
+		obj.list2   = new ArrayList<Long>(){{
+			add(-1L);
+			add(-2L);
+			add(-3L);
+			add( (long)Math.pow(2, 54-1)-1 );
+			add( (long)(Math.pow(2, (54-1)) - Math.pow(2, 54)) );
+     			//add(Long.MAX_VALUE);
+			//add(Long.MIN_VALUE);
+		}};
 
 		return obj;
 	}
 
 	public void compare(SignedInt obj1, SignedInt obj2) {
-		//for (int i = 0; i < obj1.list2.size(); i++){
+		for (int i = 0; i < obj1.list2.size(); i++){
 	        //System.out.println("Ser = " + obj1.list2.get(i) + ", Deser = " + obj2.list2.get(i));
-		//	org.junit.Assert.assertEquals(obj1.list2.get(i), obj2.list2.get(i));
-		//}
+			org.junit.Assert.assertEquals(obj1.list2.get(i), obj2.list2.get(i));
+		}
 		for (int i = 0; i < obj1.list1.size(); i++){
 	        //System.out.println("Ser = " + obj1.list1.get(i) + ", Deser = " + obj2.list1.get(i));
 			org.junit.Assert.assertEquals(obj1.list1.get(i), obj2.list1.get(i));

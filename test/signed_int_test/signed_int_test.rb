@@ -3,7 +3,7 @@ require 'divine'
 
 struct 'SignedInt' do
   list :list1, :sint32
-  #list :list2, :sint64
+  list :list2, :sint64
 end
 
 if ARGV[0] == "ruby"
