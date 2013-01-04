@@ -7,6 +7,7 @@ require "divine/code_generators/code_generator"
 require "divine/code_generators/ruby"
 require "divine/code_generators/java"
 require "divine/code_generators/javascript"
+require "divine/code_generators/csharp"
 
 module Divine
 end

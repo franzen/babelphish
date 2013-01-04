@@ -12,4 +12,7 @@ elsif ARGV[0] == "js"
   Divine::CodeGenerator.new.generate(:javascript, file: 'test_signed_int.js', target_dir: "test/signed_int_test/js_test")
 elsif ARGV[0] == "java"
   Divine::CodeGenerator.new.generate(:java, file: 'test_signed_int.java', target_dir: "test/signed_int_test/java_test")
+elsif ARGV[0] == "csharp"
+  Divine::CodeGenerator.new.generate(:csharp, file: 'test_signed_int.cs', target_dir: "test/signed_int_test/csharp_test")
+
 end

@@ -16,4 +16,6 @@ elsif ARGV[0] == "js"
   Divine::CodeGenerator.new.generate(:javascript, file: 'test_binaryTree.js', target_dir: 'test/binaryTree_test/js_test')
 elsif ARGV[0] == "java"
   Divine::CodeGenerator.new.generate(:java, file: 'test_binaryTree.java', target_dir: 'test/binaryTree_test/java_test')
+elsif ARGV[0] == "csharp"
+  Divine::CodeGenerator.new.generate(:csharp, file: 'test_binaryTree.cs', target_dir: "test/binaryTree_test/csharp_test")
 end

@@ -30,5 +30,7 @@ elsif ARGV[0] == "js"
   Divine::CodeGenerator.new.generate(:javascript, file: 'test_babel.js', target_dir: 'test/basic_complex_test/js_test')
 elsif ARGV[0] == "java"
   Divine::CodeGenerator.new.generate(:java, file: 'test_babel.java', target_dir: 'test/basic_complex_test/java_test')
+elsif ARGV[0] == "csharp"
+  #Divine::CodeGenerator.new.generate(:csharp, file: 'test_babel.cs', target_dir: "test/basic_complex_test/csharp_test")
 end
 

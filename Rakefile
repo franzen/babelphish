@@ -6,7 +6,7 @@ task :default => ["test:all"]
 
 namespace :test  do
   desc "Run all tests"
-  task :all => [:ruby, :js, :java, :unify]  	# Make sure that the unify test be the last one in the list.
+  task :all => [:ruby, :js, :java, :csharp, :unify]  	# Make sure that the unify test be the last one in the list.
   
   desc "Run Ruby code test suite"
   task :ruby do
@@ -37,26 +37,29 @@ namespace :test  do
   desc "Run java code test suite"
   task :java do
     generate_source('java')
-    #system("javac -cp test/java_lib/junit.jar: test/signed_float_test/java_test/*.java")
-    #system("java -cp test/signed_float_test/java_test/:test/java_lib/junit.jar:. org.junit.runner.JUnitCore JavaTest")
+    #test_csharp("signed_float")
 
-    system("javac -cp test/java_lib/junit.jar: test/signed_int_test/java_test/*.java")
-    system("java -cp test/signed_int_test/java_test/:test/java_lib/junit.jar:. org.junit.runner.JUnitCore JavaTest")
-    
-    system("javac -cp test/java_lib/junit.jar: test/ipv6_test/java_test/*.java")
-    system("java -cp test/ipv6_test/java_test/:test/java_lib/junit.jar:. org.junit.runner.JUnitCore JavaTest")
-
-    system("javac -cp test/java_lib/junit.jar: test/complex_test/java_test/*.java")
-    system("java -cp test/complex_test/java_test/:test/java_lib/junit.jar:. org.junit.runner.JUnitCore JavaTest")
-
-    system("javac -cp test/java_lib/junit.jar: test/binaryTree_test/java_test/*.java")
-    system("java -cp test/binaryTree_test/java_test/:test/java_lib/junit.jar:. org.junit.runner.JUnitCore JavaTest")
-
-    system("javac -cp test/java_lib/junit.jar: test/basic_complex_test/java_test/*.java")
-    system("java -cp test/basic_complex_test/java_test/:test/java_lib/junit.jar:. org.junit.runner.JUnitCore JavaTest")
+    test_java("signed_int")
+    test_java("ipv6")
+    test_java("complex")
+    test_java("binaryTree")
+    test_java("basic_complex")
 
     system("find . -name 'test*.java' | xargs rm") # Remove generated source code files
     system("find . -name '*.class' | xargs rm") # Remove generated .class files
+  end
+
+  desc "Run cSharp code test suite"
+  task :csharp do
+    generate_source('csharp')
+
+    test_csharp("signed_int")
+    test_csharp("ipv6")
+    test_csharp("complex")
+    test_csharp("binaryTree")
+    
+    system("find . -name 'test*.cs' | xargs rm") # Remove generated source code files
+    system("find . -name '*.exe' | xargs rm") # Remove generated source code files
   end
 
   desc "Unify test to compare the produced binary files. Prerequisite Other tests must be run first to generate bin files to be compared"
@@ -66,6 +69,16 @@ namespace :test  do
   end
 end
 
+def test_java(test)
+  system("javac -cp test/java_lib/junit.jar: test/#{test}_test/java_test/*.java")
+  system("java -cp test/#{test}_test/java_test/:test/lib/java/junit.jar:. org.junit.runner.JUnitCore JavaTest")
+end
+
+def test_csharp(test)
+  system("gmcs test/#{test}_test/csharp_test/*.cs -r:test/lib/csharp/nunit.framework.dll")
+  system("mv -f test/#{test}_test/csharp_test/csharp_test.exe -t test/lib/csharp/")
+  system("mono test/lib/csharp/csharp_test.exe")
+end
 
 def generate_source(lang)
   puts "Divine Version #{Divine::VERSION}"

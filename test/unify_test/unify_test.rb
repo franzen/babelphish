@@ -11,12 +11,14 @@ class TestUnify < MiniTest::Unit::TestCase
 		"test/signed_int_test/"
             ]
     paths.each do |path|
-      ruby = readFile("#{path}ruby_test/bin.babel.rb")
-      js   = readFile("#{path}js_test/bin.babel.js")
-      java = readFile("#{path}java_test/bin.babel")
+      ruby   = readFile("#{path}ruby_test/bin.babel.rb")
+      js     = readFile("#{path}js_test/bin.babel.js")
+      java   = readFile("#{path}java_test/bin.babel")
+      csharp = readFile("#{path}csharp_test/bin.babel.csharp")
 	    
       assert_equal ruby, js
       assert_equal ruby, java
+      assert_equal ruby, csharp
     end
   end
 

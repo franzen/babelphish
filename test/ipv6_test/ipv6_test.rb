@@ -11,4 +11,6 @@ elsif ARGV[0] == "js"
   Divine::CodeGenerator.new.generate(:javascript, file: 'test_ipv6.js', target_dir: "test/ipv6_test/js_test")
 elsif ARGV[0] == "java"
   Divine::CodeGenerator.new.generate(:java, file: 'test_ipv6.java', target_dir: "test/ipv6_test/java_test")
+elsif ARGV[0] == "csharp"
+  Divine::CodeGenerator.new.generate(:csharp, file: 'test_ipv6.cs', target_dir: "test/ipv6_test/csharp_test")
 end
