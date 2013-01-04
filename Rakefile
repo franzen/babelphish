@@ -70,7 +70,7 @@ namespace :test  do
 end
 
 def test_java(test)
-  system("javac -cp test/java_lib/junit.jar: test/#{test}_test/java_test/*.java")
+  system("javac -cp test/lib/java/junit.jar: test/#{test}_test/java_test/*.java")
   system("java -cp test/#{test}_test/java_test/:test/lib/java/junit.jar:. org.junit.runner.JUnitCore JavaTest")
 end
 
