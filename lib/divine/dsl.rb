@@ -1,4 +1,5 @@
 module Divine
+  # Contains all defined structs
   $all_structs = {}
 
   class StructDefinition

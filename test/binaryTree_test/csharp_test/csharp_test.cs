@@ -70,7 +70,7 @@ namespace test_signed_int
 				bt2.root_node[0].next_node[0].next_node[0].i32);
         }
 
-        public static void serialize(BabelBase obj)
+        public static void serialize(Divine obj)
         {
             try
             {

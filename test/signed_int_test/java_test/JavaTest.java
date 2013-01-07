@@ -59,7 +59,7 @@ public class JavaTest {
 		}
 	}
 
-	public void serialize(BabelBase obj) throws IOException {
+	public void serialize(Divine obj) throws IOException {
 		byte[] data = obj.serialize();
 		File file = new File("test/signed_int_test/java_test/bin.babel");
 		try {

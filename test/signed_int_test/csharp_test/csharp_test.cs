@@ -57,7 +57,7 @@ namespace test_signed_int
             }
         }
 
-        public static void serialize(BabelBase obj)
+        public static void serialize(Divine obj)
         {
             try
             {

@@ -135,8 +135,15 @@ module Divine
   end
   
   
-  
+  #
+  # Support basic methods that generate source code file(s) for target language
+  #
   class CodeGenerator
+    #
+    # generate source code file(s)
+    # * *Args* :
+    #  - +tagret+ -> target language
+    #  - +opts+   -> Dictionary that contains generation params [file, parent_class, target_dir, ...]
     def generate(target, opts)
       gen = $language_generators[target.to_sym]
       raise "Unknown target language: #{target}" unless gen
@@ -160,6 +167,11 @@ module Divine
       end
     end
     
+    #
+    # Create file
+    # * *Args* :
+    #  - +path+    -> the path in which the file will be written
+    #  - +content+ -> the content to be written
     def writeFile(path, content)
       File.open(path, 'w+') do |f|
         puts "... writing #{path}"

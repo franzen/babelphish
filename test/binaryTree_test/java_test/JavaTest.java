@@ -90,7 +90,7 @@ public class JavaTest {
 				bt2.root_node.get(0).next_node.get(0).next_node.get(0).i32);
 	}
 
-	public void serialize(BabelBase obj) throws IOException {
+	public void serialize(Divine obj) throws IOException {
 		byte[] data = obj.serialize();
 		File file = new File("test/binaryTree_test/java_test/bin.babel");
 		try {

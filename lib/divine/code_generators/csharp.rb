@@ -1,17 +1,30 @@
 module Divine
 
+##
+# * +C# Helper+ :
+# Support base function needed to build Divine enviroment and classes corresponding to DSL structs
+#
   class CsharpHelperMethods < BabelHelperMethods
     def get_header_comment
       get_header_comment_text.map do |s|
         "// #{s}"
       end.join("\n")
     end
-    
+
+##
+# Generate the base Divine Csharp Class
+# that contains the main methods:
+# * serialize
+# * serialize Internal
+# * deserialize
+# * Read Methods
+# * Write Methods
+
     def csharp_base_class_template_str
       <<EOS
 namespace divine
 {
-    public abstract class BabelBase 
+    public abstract class Divine 
     {
 
         public byte[] serialize()
@@ -449,9 +462,14 @@ namespace divine
 EOS
     end
 
+##
+#  Generate C# Class that corresponding to the struct definition
+#  * *Args*    :
+#   - +sh+ -> Struct Name
+
     def csharp_class_template(sh)
       code = [
-        "public class #{sh.name} : BabelBase {",
+        "public class #{sh.name} : Divine {",
         :indent,
         "",
 
@@ -543,6 +561,20 @@ EOS
       format_src(3, 3, code)
     end
     
+##
+#  Generate default C# data types declaration values corresponding to each DSL types:
+#  * DSL Type --> Corresponding Default C# Value
+#  * int8     --> 0
+#  * int16    --> 0
+#  * sint32   --> 0
+#  * int32    --> 0
+#  * sint64   --> 0
+#  * string   --> ""
+#  * ip_number--> ""
+#  * binary   --> new byte[0]
+#  * short_binary --> new byte[0]
+#  * list     --> new List<type>()
+#  * map      --> new Dictionary<keyType, valueType>()
 
     def csharp_get_empty_declaration(types, is_reference_type = false)
       if types.respond_to? :referenced_types
@@ -564,7 +596,7 @@ EOS
       else
         case types
         when :binary, :short_binary
-          is_reference_type ? "new Byte[0]" : "new byte[0]"
+          "new byte[0]"
         when :int8, :int16, :int32, :sint32, :sint64
           "0"
         when :string, :ip_number
@@ -578,7 +610,22 @@ EOS
         end
       end
     end
-    
+   
+##
+#  Generate C# data types declaration corresponding to each DSL type
+#  * DSL Type --> Corresponding C# Type
+#  * int8     --> byte
+#  * int16    --> ushort
+#  * int32    --> uint
+#  * sint32   --> int
+#  * sint64   --> long
+#  * string   --> string
+#  * ip_number--> string
+#  * binary   --> byte[]
+#  * short_binary --> byte[]
+#  * list     --> List<type>
+#  * map      --> Dictionary<keyType, valueType>
+ 
     def csharp_get_type_declaration(types, is_reference_type = false)
       if types.respond_to? :referenced_types
         csharp_get_type_declaration(types.referenced_types, is_reference_type)
@@ -624,7 +671,12 @@ EOS
         end
       end
     end
-    
+ 
+##
+#  Generate the way of serializing different DSL types
+#  * *Args*    :
+#   - +var+   -> variable name
+#   - +types+ -> variable type
     def csharp_serialize_internal(var, types)
       if types.respond_to? :first
         case types.first
@@ -668,6 +720,12 @@ EOS
         end
       end
     end
+
+##
+#  Generate the way of deserializing different DSL types
+#  * *Args*    :
+#   - +var+   -> variable name
+#   - +types+ -> variable type
 
     def csharp_deserialize_internal(var, types)
       if types.respond_to? :first
@@ -724,8 +782,17 @@ EOS
     end
   end
 
-
+##
+# Responsible for generating Divine and structs classes
+#
   class CsharpGenerator < CsharpHelperMethods
+
+##
+# Generate Java class(es)
+# * *Args*    :
+#   - +structs+ -> Dictionary of structs
+#   - +opts+    -> Dictionary that contains generation params [file, debug, parent_class, target_dir]
+
     def generate_code(structs, opts)
       $debug_csharp = true if opts[:debug]
       base_template = Erubis::Eruby.new(csharp_base_class_template_str)
@@ -739,7 +806,7 @@ EOS
     
       # User defined super class?
       toplevel = opts[:parent_class] || nil
-      toplevel = " extends #{toplevel}" if toplevel
+      toplevel = " : #{toplevel}" if toplevel
       
       return [{
                file: opts[:file], 
@@ -747,6 +814,9 @@ EOS
              }]
     end
   
+##
+# Build header comments and list of imports
+
     def csharp_get_begin_module(opts)
       str = "#{get_header_comment}\n\n"
       str << get_csharp_imports
@@ -754,6 +824,9 @@ EOS
       return str
     end
     
+##
+# Generate list of imports needed in generated C# classes
+#
     def get_csharp_imports
       [
 	"System",

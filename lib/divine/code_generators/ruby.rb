@@ -1,5 +1,9 @@
 module Divine
 
+##
+# * +Ruby Helper+ :
+# Support base function needed to build Divine enviroment and classes corresponding to DSL structs
+#
   class RubyHelperMethods < BabelHelperMethods
     def get_header_comment
       get_header_comment_text.map do |s|
@@ -7,9 +11,18 @@ module Divine
       end.join("\n")
     end
     
+##
+# Generate the base Divine Ruby Class
+# that contains the main methods:
+# * serialize
+# * serialize Internal
+# * deserialize
+# * Read Methods
+# * Write Methods
+
     def ruby_base_class_template_str
       %q{
-  class BabelBase<%= toplevel_class %>
+  class Divine<%= toplevel_class %>
     public
     def serialize
       out = []
@@ -279,10 +292,14 @@ module Divine
   end
     }
     end
+##
+#  Generate Ruby Class that corresponding to the struct definition
+#  * *Args*    :
+#   - +sh+ -> Struct Name
 
     def ruby_class_template(sh)
       code = [
-        "class #{sh.name} < BabelBase",
+        "class #{sh.name} < Divine",
         :indent,
         "",
         
@@ -364,7 +381,20 @@ module Divine
         ]
       format_src(0, 3, code)
     end
-
+##
+#  Generate default Ruby data types declaration values corresponding to each DSL types:
+#  * DSL Type --> Corresponding Default Ruby Value
+#  * int8     --> 0
+#  * int16    --> 0
+#  * sint32   --> 0
+#  * int32    --> 0
+#  * sint64   --> 0
+#  * string   --> ""
+#  * ip_number--> ""
+#  * binary   --> []
+#  * short_binary --> []
+#  * list     --> []
+#  * map      --> {}
 
     def ruby_get_empty_declaration(field)
       case field.type
@@ -380,6 +410,12 @@ module Divine
         raise "Unkown field type #{field.type}"
       end
     end
+
+##
+#  Generate the way of serializing different DSL types
+#  * *Args*    :
+#   - +var+   -> variable name
+#   - +types+ -> variable type
 
     def ruby_serialize_internal(var, types)
       if types.respond_to? :first
@@ -421,6 +457,12 @@ module Divine
         end
       end
     end
+
+##
+#  Generate the way of deserializing different DSL types
+#  * *Args*    :
+#   - +var+   -> variable name
+#   - +types+ -> variable type
 
     def ruby_deserialize_internal(var, types)
       if types.respond_to? :first
@@ -476,10 +518,17 @@ module Divine
   end
     
 
-
+##
+# Responsible for generating Divine and structs classes
+#
   class RubyGenerator < RubyHelperMethods
     @debug = true
-  
+##
+# Generate Ruby class(es)
+# * *Args*    :
+#   - +structs+ -> Dictionary of structs
+#   - +opts+    -> Dictionary that contains generation params [file, module, parent_class, target_dir]
+
     def generate_code(structs, opts)
       base_template = Erubis::Eruby.new(ruby_base_class_template_str)
       keys = structs.keys.sort
@@ -496,6 +545,11 @@ module Divine
       return [{file: opts[:file], src: "#{get_header_comment}\n#{ruby_get_begin_module(opts)}#{base_template.result({ toplevel_class: toplevel, this: self })}\n\n#{src.join("\n\n")}#{ruby_get_end_module(opts)}"}]
     end
   
+##
+# Build module name
+# * *Args*    :
+#   - +opts+ -> Dictionary contains module name in key module
+
     def ruby_get_begin_module(opts)
       if opts[:module]
         "module #{opts[:module]}\n\n"
@@ -503,7 +557,8 @@ module Divine
         nil
       end
     end
-
+##
+# Ending the module
     def ruby_get_end_module(opts)
       if opts[:module]
         "\n\nend\n"

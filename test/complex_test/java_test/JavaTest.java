@@ -102,7 +102,7 @@ public class JavaTest {
 				.get(0), obj2.list1.get(1).get("BB").get(0).list2.get(0));
 	}
 
-	public void serialize(BabelBase obj) throws IOException {
+	public void serialize(Divine obj) throws IOException {
 		byte[] data = obj.serialize();
 		File file = new File("test/complex_test/java_test/bin.babel");
 		try {

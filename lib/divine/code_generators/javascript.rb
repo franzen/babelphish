@@ -6,14 +6,23 @@
 
 module Divine
   $debug_javascript = false
-  
+##
+# * +JS Helper+ :
+# Support base function needed to build base divine functions and DSL structs
+#
   class JavascriptHelperMethods < BabelHelperMethods
     def get_header_comment
       get_header_comment_text.map do |s|
         "// #{s}"
       end.join("\n")
     end
-    
+##
+# Generate the base functions of:
+# * serialize
+# * deserialize
+# * Read Methods
+# * Write Methods
+
     def javascript_base_class_template_str
       <<EOS
 // ------------------------------------------------------------ DivineDataReader
@@ -454,6 +463,11 @@ DivineHelper.prototype.raise_error = function (msg) {
 EOS
     end
 
+##
+#  Generate required functions that corresponding to the struct definition
+#  * *Args*    :
+#   - +sh+ -> Struct Name
+
     def javascript_class_template(sh)
       code = [
         "",
@@ -537,6 +551,20 @@ EOS
       format_src(0, 3, code)
     end
 
+##
+#  Generate default JS data types declaration values corresponding to each DSL types:
+#  * DSL Type --> Corresponding Default JS Value
+#  * int8     --> 0
+#  * int16    --> 0
+#  * sint32   --> 0
+#  * int32    --> 0
+#  * sint64   --> 0
+#  * string   --> ""
+#  * ip_number--> ""
+#  * binary   --> []
+#  * short_binary --> []
+#  * list     --> []
+#  * map      --> {}
 
     def javascript_get_empty_declaration(field)
       case field.type
@@ -552,6 +580,12 @@ EOS
         raise "Unkown field type #{field.type}"
       end
     end
+
+##
+#  Generate the way of serializing different DSL types
+#  * *Args*    :
+#   - +var+   -> variable name
+#   - +types+ -> variable type
 
     def javascript_serialize_internal(var, types)
       if types.respond_to? :first
@@ -599,6 +633,12 @@ EOS
         end
       end
     end
+
+##
+#  Generate the way of deserializing different DSL types
+#  * *Args*    :
+#   - +var+   -> variable name
+#   - +types+ -> variable type
 
     def javascript_deserialize_internal(var, types)
       if types.respond_to? :first
@@ -656,8 +696,18 @@ EOS
   end
     
 
+##
+# Responsible for generating Divine and structs functions
+#
 
   class JavascriptGenerator < JavascriptHelperMethods
+
+##
+# Generate JS Functions
+# * *Args*    :
+#   - +structs+ -> Dictionary of structs
+#   - +opts+    -> Dictionary that contains generation params [file, debug, parent_class, target_dir]
+
     def generate_code(structs, opts)
       $debug_javascript = true if opts[:debug]
       base_template = Erubis::Eruby.new(javascript_base_class_template_str)
@@ -674,7 +724,10 @@ EOS
       toplevel = " < #{toplevel}" if toplevel 
       return [{file: opts[:file], src: "#{javascript_get_begin_module(opts)}#{base_template.result({ toplevel_class: toplevel })}\n\n#{src.join("\n\n")}#{javascript_get_end_module(opts)}"}]
     end
-  
+
+##
+# Build Header Comments
+
     def javascript_get_begin_module(opts)
        "#{get_header_comment}\n\n"
     end

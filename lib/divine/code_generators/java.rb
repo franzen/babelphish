@@ -1,5 +1,9 @@
 module Divine
 
+##
+# * +Java Helper+ :
+# Support base function needed to build Divine enviroment and classes corresponding to DSL structs
+#
   class JavaHelperMethods < BabelHelperMethods
     def get_header_comment
       get_header_comment_text.map do |s|
@@ -7,9 +11,18 @@ module Divine
       end.join("\n")
     end
     
+##
+# Generate the base Divine Java Class
+# that contains the main methods:
+# * serialize
+# * serialize Internal
+# * deserialize
+# * Read Methods
+# * Write Methods
+
     def java_base_class_template_str
       <<EOS
-abstract class BabelBase <%= toplevel_class %> {
+abstract class Divine <%= toplevel_class %> {
 	private static final Charset UTF8 = Charset.forName("UTF-8");
 
 	public byte[] serialize() throws IOException {
@@ -276,9 +289,13 @@ abstract class BabelBase <%= toplevel_class %> {
 EOS
     end
 
+##
+#  Generate Java Class that corresponding to the struct definition
+#  * *Args*    :
+#   - +sh+ -> Struct Name
     def java_class_template(sh)
       code = [
-        "class #{sh.name} extends BabelBase {",
+        "class #{sh.name} extends Divine {",
         :indent,
         "",
 
@@ -354,6 +371,20 @@ EOS
       format_src(3, 3, code)
     end
     
+##
+#  Generate default java data types declaration values corresponding to each DSL types:
+#  * DSL Type --> Corresponding Default Java Value
+#  * int8     --> 0
+#  * int16    --> 0
+#  * sint32   --> 0
+#  * int32    --> 0L
+#  * sint64   --> 0L
+#  * string   --> ""
+#  * ip_number--> ""
+#  * binary   --> new Byte[0]
+#  * short_binary --> new Byte[0]
+#  * list     --> new ArrayList<type>()
+#  * map      --> new HashMap<keyType, valueType>()
 
     def java_get_empty_declaration(types, is_reference_type = false)
       if types.respond_to? :referenced_types
@@ -391,7 +422,22 @@ EOS
         end
       end
     end
-    
+
+##
+#  Generate java data types declaration corresponding to each DSL type
+#  * DSL Type --> Corresponding Java Type
+#  * int8     --> int
+#  * int16    --> int
+#  * sint32   --> int
+#  * int32    --> long
+#  * sint64   --> long
+#  * string   --> String
+#  * ip_number--> String
+#  * binary   --> Byte[]
+#  * short_binary --> Byte[]
+#  * list     --> ArrayList<type>
+#  * map      --> HashMap<keyType, valueType>
+
     def java_get_type_declaration(types, is_reference_type = false)
       if types.respond_to? :referenced_types
         java_get_type_declaration(types.referenced_types, is_reference_type)
@@ -431,7 +477,12 @@ EOS
         end
       end
     end
-    
+
+##
+#  Generate the way of serializing different DSL types
+#  * *Args*    :
+#   - +var+   -> variable name
+#   - +types+ -> variable type
     def java_serialize_internal(var, types)
       if types.respond_to? :first
         case types.first
@@ -476,6 +527,11 @@ EOS
       end
     end
 
+##
+#  Generate the way of deserializing different DSL types
+#  * *Args*    :
+#   - +var+   -> variable name
+#   - +types+ -> variable type
     def java_deserialize_internal(var, types)
       if types.respond_to? :first
         case types.first
@@ -531,8 +587,16 @@ EOS
     end
   end
 
-
+##
+# Responsible for generating Divine and structs classes
+#
   class JavaGenerator < JavaHelperMethods
+
+##
+# Generate Java class(es)
+# * *Args*    :
+#   - +structs+ -> Dictionary of structs
+#   - +opts+    -> Dictionary that contains generation params [file, debug, package, parent_class, target_dir]
     def generate_code(structs, opts)
       $debug_java = true if opts[:debug]
       base_template = Erubis::Eruby.new(java_base_class_template_str)
@@ -548,7 +612,7 @@ EOS
       toplevel = opts[:parent_class] || nil
       toplevel = " extends #{toplevel}" if toplevel
       if opts[:package]
-        res = [{file: "BabelBase.java", src: "#{java_get_begin_module(opts)}public #{base_template.result({ toplevel_class: toplevel })}"}]
+        res = [{file: "Divine.java", src: "#{java_get_begin_module(opts)}public #{base_template.result({ toplevel_class: toplevel })}"}]
 	for cls in src
           res << {file: cls.match(/class (.*) extends/)[1]+".java", src: "#{java_get_begin_module(opts)}public #{cls}"}
         end
@@ -557,7 +621,11 @@ EOS
         return [{file: opts[:file], src: "#{java_get_begin_module(opts)}#{base_template.result({ toplevel_class: toplevel })}\n\n#{src.join("\n\n")}"}]
       end
     end
-  
+##
+# Build package name and list of imports
+# * *Args*    :
+#   - +opts+ -> Dictionary that contains package name in key 'package'  
+#
     def java_get_begin_module(opts)
       str = "#{get_header_comment}\n\n"
       str << "package #{opts[:package]};" if opts[:package]
@@ -565,7 +633,9 @@ EOS
       str << "\n\n"
       return str
     end
-    
+##
+# Generate list of imports needed in generated java classes
+#
     def get_java_imports
       [
         "java.io.ByteArrayInputStream",

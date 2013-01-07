@@ -51,7 +51,7 @@ public class JavaTest {
 		org.junit.Assert.assertEquals(obj1.list1.get(1), obj2.list1.get(1));
 	}
 
-	public void serialize(BabelBase obj) throws IOException {
+	public void serialize(Divine obj) throws IOException {
 		byte[] data = obj.serialize();
 		File file = new File("test/ipv6_test/java_test/bin.babel");
 		try {

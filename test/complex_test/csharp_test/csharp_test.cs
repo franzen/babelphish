@@ -80,7 +80,7 @@ namespace test_signed_int
 				[0].ToLower(), obj2.list1[1]["BB"][0].list2[0].ToLower());
         }
 
-        public static void serialize(BabelBase obj)
+        public static void serialize(Divine obj)
         {
             try
             {
