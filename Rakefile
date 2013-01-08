@@ -1,5 +1,5 @@
 require "bundler/gem_tasks"
-
+require 'fileutils'
 
 task :default => ["test:all"]
 
@@ -76,7 +76,7 @@ end
 
 def test_csharp(test)
   system("gmcs test/#{test}_test/csharp_test/*.cs -r:test/lib/csharp/nunit.framework.dll")
-  system("mv -f test/#{test}_test/csharp_test/csharp_test.exe -t test/lib/csharp/")
+  FileUtils.move "./test/#{test}_test/csharp_test/csharp_test.exe", "./test/lib/csharp/"
   system("mono test/lib/csharp/csharp_test.exe")
 end
 
