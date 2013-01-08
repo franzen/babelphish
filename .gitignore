@@ -45,3 +45,4 @@ test/binaryTree_test/js_test/test_binaryTree.js
 test/complex_test/js_test/test_complex.js
 test/ipv6_test/js_test/test_ipv6.js
 test/signed_int_test/js_test/test_signed_int.js
+bin.babel.csharp
