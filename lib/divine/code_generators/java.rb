@@ -175,7 +175,7 @@ abstract class Divine <%= toplevel_class %> {
 	protected void writeSint64(long v, ByteArrayOutputStream out) {
 		if (v > Long.MAX_VALUE) { 		// Max  9,223,372,036,854,775,807
 			raiseError("Too large sInt64 number: " + v + ", Max = " + Integer.MAX_VALUE);
-		}else if(v < Long.MIN_VALUE){ 		// Min -9,223,372,036,854,775,807
+		}else if(v < Long.MIN_VALUE){ 		// Min -9,223,372,036,854,775,808
 			raiseError("Too small sInt64 number: " + v + ", Min = " + Integer.MIN_VALUE);
 		}
 		writeInt32(((v >> 32) & 0xFFFFFFFFL), out);
@@ -374,11 +374,11 @@ EOS
 ##
 #  Generate default java data types declaration values corresponding to each DSL types:
 #  * DSL Type --> Corresponding Default Java Value
-#  * int8     --> 0
-#  * int16    --> 0
-#  * sint32   --> 0
-#  * int32    --> 0L
-#  * sint64   --> 0L
+#  * int8     --> 0  Range -> [0 - 255]
+#  * int16    --> 0  Range -> [0 - 65535]
+#  * int32    --> 0L Range -> [0 - 4.294.967.295]
+#  * sint32   --> 0  Range -> [-2.147.483.648 - 2.147.483.647]
+#  * sint64   --> 0L Range -> [-9.223.372.036.854.775.808, 9.223.372.036.854.775.807]
 #  * string   --> ""
 #  * ip_number--> ""
 #  * binary   --> new Byte[0]

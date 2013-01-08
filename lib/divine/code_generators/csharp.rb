@@ -261,7 +261,7 @@ namespace divine
                 raiseError("Too large sInt32 number: " + v + ", Max = " + int.MaxValue);
             }
             else if (v < int.MinValue)
-            { 	// Min -2.147.483.648
+            { 		// Min -2.147.483.648
                 raiseError("Too small sInt32 number: " + v + ", Min = " + int.MinValue);
             }
             writeInt8((byte)((v >> 24) & 0xFF), output);
@@ -269,9 +269,9 @@ namespace divine
         }
 
 	    protected void writeSint64(long v, MemoryStream output) {
-		    if (v > long.MaxValue ) { 		// Max  9,223,372,036,854,775,807
+		    if (v > long.MaxValue ) { 			// Max  9,223,372,036,854,775,807
 			    raiseError("Too large sInt64 number: " + v + ", Max = " + long.MaxValue);
-		    }else if(v < long.MinValue){ 		// Min -9,223,372,036,854,775,807
+		    }else if(v < long.MinValue){ 		// Min -9,223,372,036,854,775,808
                 raiseError("Too small sInt64 number: " + v + ", Min = " + long.MinValue);
 		    }
             writeInt32((uint)((v >> 32) & 0xFFFFFFFF), output);
@@ -564,11 +564,11 @@ EOS
 ##
 #  Generate default C# data types declaration values corresponding to each DSL types:
 #  * DSL Type --> Corresponding Default C# Value
-#  * int8     --> 0
-#  * int16    --> 0
-#  * sint32   --> 0
-#  * int32    --> 0
-#  * sint64   --> 0
+#  * int8     --> 0 Range -> [0 - 255]
+#  * int16    --> 0 Range -> [0 - 65535]
+#  * int32    --> 0 Range -> [0 - 4.294.967.295]
+#  * sint32   --> 0 Range -> [-2.147.483.648 - 2.147.483.647]
+#  * sint64   --> 0 Range -> [-9.223.372.036.854.775.808, 9.223.372.036.854.775.807]
 #  * string   --> ""
 #  * ip_number--> ""
 #  * binary   --> new byte[0]

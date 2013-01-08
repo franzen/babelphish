@@ -158,8 +158,8 @@ module Divine
       v = v.to_i
       max = (2** (64 - 1)) - 1
       min = (2** (64 - 1) ) - (2** 64)
-      raise_error "Too large Sint32 number: #{v} , Max = #{max}" if v > max # Max  2.147.483.647
-      raise_error "Too small sInt32 number: #{v} , Min = #{min}" if v < min # Min -2.147.483.648
+      raise_error "Too large Sint32 number: #{v} , Max = #{max}" if v > max # Max  9.223.372.036.854.775.807
+      raise_error "Too small sInt32 number: #{v} , Min = #{min}" if v < min # Min -9.223.372.036.854.775.808
       write_int32( v >> 32 & 0xFFFFFFFF, out)
       write_int32( v & 0xFFFFFFFF, out)
     end
@@ -384,11 +384,11 @@ module Divine
 ##
 #  Generate default Ruby data types declaration values corresponding to each DSL types:
 #  * DSL Type --> Corresponding Default Ruby Value
-#  * int8     --> 0
-#  * int16    --> 0
-#  * sint32   --> 0
-#  * int32    --> 0
-#  * sint64   --> 0
+#  * int8     --> 0 Range -> [0 - 255]
+#  * int16    --> 0 Range -> [0 - 65535]
+#  * int32    --> 0 Range -> [0 - 4.294.967.295]
+#  * sint32   --> 0 Range -> [-2.147.483.648 - 2.147.483.647]
+#  * sint64   --> 0 Range -> [-9.223.372.036.854.775.808, 9.223.372.036.854.775.807]
 #  * string   --> ""
 #  * ip_number--> ""
 #  * binary   --> []

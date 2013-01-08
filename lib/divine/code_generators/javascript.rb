@@ -554,11 +554,11 @@ EOS
 ##
 #  Generate default JS data types declaration values corresponding to each DSL types:
 #  * DSL Type --> Corresponding Default JS Value
-#  * int8     --> 0
-#  * int16    --> 0
-#  * sint32   --> 0
-#  * int32    --> 0
-#  * sint64   --> 0
+#  * int8     --> 0 Range -> [0 - 255]
+#  * int16    --> 0 Range -> [0 - 65535]
+#  * int32    --> 0 Range -> [0 - 4.294.967.295]
+#  * sint32   --> 0 Range -> [-2.147.483.648 - 2.147.483.647]
+#  * sint64   --> 0 Range -> [-9.007.199.254.740.992, 9.007.199.254.740.991] (limited by 53-bit)
 #  * string   --> ""
 #  * ip_number--> ""
 #  * binary   --> []
