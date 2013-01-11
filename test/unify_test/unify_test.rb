@@ -1,7 +1,13 @@
 require 'minitest/autorun'
 
+#
+# Responsible for equality testing to the produced byte files for all languages
+#
 class TestUnify < MiniTest::Unit::TestCase
 
+  #
+  # Make sure that the produced byte files from all languages in every test are the same.
+  #
   def test_unify
     puts "Unify Test: Compare the produced binary files"
     paths = [
@@ -22,6 +28,10 @@ class TestUnify < MiniTest::Unit::TestCase
     end
   end
 
+  #
+  # Read certain file in binary mode and return its content bytes
+  # * *Args* :
+    #  - +file+ -> path to file name
   def readFile(file)
     data = File.new(file).binmode
     data.read(data.size).each_byte.to_a

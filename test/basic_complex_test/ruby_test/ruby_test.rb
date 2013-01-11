@@ -1,12 +1,14 @@
 require_relative 'test_babel.rb'
 require 'minitest/autorun'
 
+#
+# Responsible for testing basic and complex structure
+#
 class TestBabelTestBasic < MiniTest::Unit::TestCase
 
-  def setup
-    
-  end
-
+  #
+  # Compare objects after serialize and deserialize operations "simple structure"
+  #
   def test_basic
     puts "Basic Test"
     testbasic_ser = BabelTest::TestBasic.new
@@ -32,6 +34,9 @@ class TestBabelTestBasic < MiniTest::Unit::TestCase
     assert_equal testbasic_ser.guid , testbasic_deser.guid
   end
 
+  #
+  # Compare objects after serialize and deserialize operations "complex structure"
+  #
   def test_complex
     testcomplex_ser = BabelTest::TestComplex.new
     testcomplex_ser.list1 = [0, 1, 255, 0x7FFFFFFF, 0x7FFFFFFF+1, 0xFFFFFFFE, 0xFFFFFFFF]
@@ -56,12 +61,20 @@ class TestBabelTestBasic < MiniTest::Unit::TestCase
     end
   end
 
+  #
+  # Write binary data to file
+  # * *Args* :
+  #  -data-   --> bytes to be written
+  #
   def serialize(data)
     File.open("test/basic_complex_test/ruby_test/bin.babel.rb", "w+b") do |f|
       f.write(data)
     end
   end
 
+  #
+  # Read file in binary mode and return its bytes content
+  #
   def deserialize()
     mem_buf = File.new('test/basic_complex_test/ruby_test/bin.babel.rb').binmode
   end

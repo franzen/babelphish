@@ -1,8 +1,14 @@
 require_relative 'test_binaryTree.rb'
 require 'minitest/autorun'
 
-class TestBabelTestBasic < MiniTest::Unit::TestCase
+#
+# Responsible for testing Binary Tree structure
+#
+class TestBinaryTree < MiniTest::Unit::TestCase
 
+  #
+  # Compare objects after serialize and deserialize operations
+  #
   def test_BinaryTree
     puts "Test Binary Tree"
     binaryTree_ser = buildTree
@@ -13,10 +19,13 @@ class TestBabelTestBasic < MiniTest::Unit::TestCase
 
     binaryTree_deser = BabelTest::BinaryTree.new
     binaryTree_deser.deserialize res
-    compareBinaryTree(binaryTree_ser, binaryTree_deser)
+    compare(binaryTree_ser, binaryTree_deser)
     
   end
 
+  #
+  # Initialize the original object
+  #
   def buildTree()
     root = BabelTest::Node.new
     root.i32 = 0
@@ -48,19 +57,33 @@ class TestBabelTestBasic < MiniTest::Unit::TestCase
     bt
   end
 
-  def compareBinaryTree(bt1, bt2)
+  #
+  # Make sure that the comming two objects are the same
+  # * *Args* :
+  #  -obj_ser-   --> original object
+  #  -obj_deser- --> obtained object after serialize and deserialize operations
+  #
+  def compare(bt1, bt2)
     assert_equal bt1.root_node.length, bt2.root_node.length
     assert_equal bt1.root_node[0].i32, bt2.root_node[0].i32
     assert_equal bt1.root_node[0].next_node.length, bt2.root_node[0].next_node.length
     assert_equal bt1.root_node[0].next_node[0].next_node[0].i32, bt2.root_node[0].next_node[0].next_node[0].i32
   end
 
+  #
+  # Write binary data to file
+  # * *Args* :
+  #  -data-   --> bytes to be written
+  #
   def serialize(data)
     File.open("test/binaryTree_test/ruby_test/bin.babel.rb", "w+b") do |f|
       f.write(data)
     end
   end
 
+  #
+  # Read file in binary mode and return its bytes content
+  #
   def deserialize()
     mem_buf = File.new('test/binaryTree_test/ruby_test/bin.babel.rb').binmode
   end

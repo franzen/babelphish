@@ -2,39 +2,72 @@ module Divine
   # Contains all defined structs
   $all_structs = {}
 
+  #
+  # Encapsulation basic struct information
+  #
   class StructDefinition
+
     def initialize(owner, type, args)
       @owner = owner
       @type = type
       @args = args
     end
   
+    #
+    # Get struct's name
+    #
     def name
       @args.first
     end
-  
+
     def type
       @type
     end
-    
+
+    #
+    # Get struct's version
+    #
     def version 
       @owner.version
     end
-    
+
+    #
+    # Represents strut as string
+    #
     def to_s
       "#{@owner.name}: #{self.type} #{self.name} (#{self.class.name}, #{@args.inspect})"
     end
   end
 
+  #
+  # Encapsulation simple struct information
+  #
   class SimpleDefinition < StructDefinition
+    #
+    # Ask if the struct is simple.
+    # * +Return+ : True
     def simple?; true; end
+    
+    #
+    # Get types used in the struct
+    #
     def referenced_types
       [@type]
     end
   end
 
+  #
+  # Encapsulation complex struct information
+  #
   class ComplexDefinition < StructDefinition
+    #
+    # Ask if the struct is simple.
+    # * *Return* : False
     def simple?; false; end
+
+    #
+    # Get types used in the struct
+    #
     def referenced_types
       fs = referenced_types_internal.map do |t|
         if t.is_a? StructBuilder
@@ -49,48 +82,94 @@ module Divine
     end
   end
 
+  #
+  # Encapsulation for signed integer 64-bit date type
+  #
   class SInteger64Definition < SimpleDefinition
   end
 
+  #
+  # Encapsulation for signed integer 32-bit date type
+  #
   class SInteger32Definition < SimpleDefinition
   end 
 
+  #
+  # Encapsulation for unsigned integer 32-bit date type
+  #
   class Integer32Definition < SimpleDefinition
   end
 
+  #
+  # Encapsulation for unsigned integer 24-bit
+  #
   class Integer24Definition < SimpleDefinition
   end
 
+  #
+  # Encapsulation for unsigned integer 16-bit data type
+  #
   class Integer16Definition < SimpleDefinition
   end
 
+  #
+  # Encapsulation for unsigned integer 8-bit data type
+  #
   class Integer8Definition < SimpleDefinition
   end
 
+  #
+  # Encapsulation for binary data type
+  #
   class BinaryDefinition < SimpleDefinition
   end
 
+  #
+  # Encapsulation for short binary data type
+  #
   class ShortBinaryDefinition < SimpleDefinition # Shorted than 256 bytes
   end
 
+  #
+  # Encapsulation for string data type
+  #
   class StringDefinition < SimpleDefinition
   end
 
+  #
+  # Encapsulation for boolean data type
+  #
   class BooleanDefinition < SimpleDefinition
   end
 
+  #
+  # Encapsulation for IP(v4 & v6) data type
+  #
   class IpNumberDefinition < SimpleDefinition
   end
 
-
+  #
+  # Encapsulation for list data type
+  #
   class ListDefinition < ComplexDefinition
+    
+    #
+    # Return internal types contained in current list
+    #
     protected
     def referenced_types_internal
       [@args[1]]
     end
   end
 
+  #
+  # Encapsulation for map[dictionary] data type
+  #
   class MapDefinition < ComplexDefinition
+
+    #
+    # Return internal types contained in current map
+    #
     protected
     def referenced_types_internal
       [@args[1], @args[2]]
@@ -98,7 +177,7 @@ module Divine
   end
 
 
-
+  # Contains all supported data type
   $available_types = {
     sint64: SInteger64Definition,
     sint32: SInteger32Definition,
@@ -115,7 +194,9 @@ module Divine
     ip_number: IpNumberDefinition
   }
 
-
+  #
+  # Responsible for building structs 
+  #
   class StructBuilder
     # Name = name of the struct
     # Version = struct version (not currently used)

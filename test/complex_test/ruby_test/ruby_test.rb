@@ -1,8 +1,14 @@
 require_relative 'test_complex.rb'
 require 'minitest/autorun'
 
-class TestBabelTestBasic < MiniTest::Unit::TestCase
+#
+# Responsible for testing complex structure
+#
+class TestComplexStructure < MiniTest::Unit::TestCase
 
+  #
+  # Compare objects after serialize and deserialize operations
+  #
   def test_complex
     puts "Test Complex Data Structure"
     com_ser = buildObject
@@ -17,6 +23,9 @@ class TestBabelTestBasic < MiniTest::Unit::TestCase
     
   end
 
+  #
+  # Initialize the original object
+  #
   def buildObject()
     ipList_1 = BabelTest::IPList.new
     ipList_1.list1 = ["10.2.2.1","127.0.0.1","129.36.58.15"]
@@ -33,6 +42,12 @@ class TestBabelTestBasic < MiniTest::Unit::TestCase
     com
   end
 
+  #
+  # Make sure that the comming two objects are the same
+  # * *Args* :
+  #  -obj_ser-   --> original object
+  #  -obj_deser- --> obtained object after serialize and deserialize operations
+  #
   def compare(obj1, obj2)
     assert obj1.list1.length == obj2.list1.length
     assert obj1.list1[0]["AA"].length == obj2.list1[0]["AA"].length
@@ -42,12 +57,20 @@ class TestBabelTestBasic < MiniTest::Unit::TestCase
     assert obj1.list1[1]["BB"][0].list2[2] == obj2.list1[1]["BB"][0].list2[2]
   end
 
+  #
+  # Write binary data to file
+  # * *Args* :
+  #  -data-   --> bytes to be written
+  #
   def serialize(data)
     File.open("test/complex_test/ruby_test/bin.babel.rb", "w+b") do |f|
       f.write(data)
     end
   end
 
+  #
+  # Read file in binary mode and return its bytes content
+  #
   def deserialize()
     mem_buf = File.new('test/complex_test/ruby_test/bin.babel.rb').binmode
   end

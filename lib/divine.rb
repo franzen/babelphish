@@ -13,7 +13,7 @@ module Divine
 end
 
 #
-# Toplevel definition of struct'
+# start to build struct
 #
 def struct(name, properties=nil, &block)
   #puts "struct #{name}"
