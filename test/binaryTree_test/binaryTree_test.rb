@@ -10,6 +10,9 @@ struct 'BinaryTree' do
   list :root_node, :Node   # List of root node of size equals to 1.
 end
 
+# Draw ERD for prev. structs
+Divine::GraphGenerator.new.draw("test/binaryTree_test/", "graph", "png")
+
 if ARGV[0] == "ruby"
   Divine::CodeGenerator.new.generate(:ruby, file: 'test_binaryTree.rb', module: 'BabelTest', parent_class: "Object", target_dir: 'test/binaryTree_test/ruby_test')
 elsif ARGV[0] == "js"
