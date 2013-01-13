@@ -7,7 +7,7 @@ struct 'SignedInt' do
 end
 
 # Draw ERD for prev. struct
-Divine::GraphGenerator.new.graph("test/signed_int_test/")
+Divine::GraphGenerator.new.draw("test/signed_int_test/")
 
 if ARGV[0] == "ruby"
   Divine::CodeGenerator.new.generate(:ruby, file: 'test_signed_int.rb', module: 'BabelTest', parent_class: "Object", target_dir: "test/signed_int_test/ruby_test")

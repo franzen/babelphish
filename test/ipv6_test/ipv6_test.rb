@@ -6,7 +6,7 @@ struct 'IPV6' do
 end
 
 # Draw ERD for prev. structs
-Divine::GraphGenerator.new.graph("test/ipv6_test/")
+Divine::GraphGenerator.new.draw("test/ipv6_test/")
 
 if ARGV[0] == "ruby"
   Divine::CodeGenerator.new.generate(:ruby, file: 'test_ipv6.rb', module: 'BabelTest', parent_class: "Object", target_dir: "test/ipv6_test/ruby_test")
