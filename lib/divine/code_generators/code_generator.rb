@@ -5,7 +5,13 @@ require 'fileutils'
 module Divine
   $language_generators = {}
   
+  #
+  # Support methods that help to get fields and fields type from structs 
+  #
   class StructHandler
+    # name = name of struct
+    # latest_version = struct version
+    # structs = defined struct
     attr_reader :name, :latest_version, :structs
     
     def initialize(structs)
@@ -15,16 +21,30 @@ module Divine
       @field_hash = structs.map(&:fields).flatten.group_by(&:name)
     end
     
+    #
+    # Get field of given name
+    # * *Args* :
+    #  - +name+ -> field's name
     def field(name)
       @field_hash[name]
     end
     
+    #
+    # Get all fields names
+    #
     def field_names
       @field_hash.keys.sort
     end
   end
   
+  #
+  # Support methods needed when generating source code files
+  #
   class BabelHelperMethods
+    
+    #
+    # Handle indentation
+    #
     def format_src(first_indent, following_indent, is, spc = " ")
       indent = "#{spc * first_indent}"
       is.flatten.compact.map do |i|
@@ -41,16 +61,26 @@ module Divine
       end.compact.join("\n")
     end
     
+    #
+    # Return new variable name
+    #
     def get_fresh_variable_name
       @vindex = (@vindex || 0xFF) + 1
       return "var_#{@vindex.to_s(16)}"
     end
     
+    #
+    # Camelize comming args
+    # * *Args* :
+    #  - +*str+ -> list of arguments needed to be camelized
     def camelize(*str)
       ss = str.map(&:to_s).join("_").split(/_/).flatten
       "#{ss.first.downcase}#{ss[1..-1].map(&:downcase).map(&:capitalize).join}"
     end
     
+    #
+    # Return Header comments for generated files
+    #
     def get_header_comment_text
       return [
         "",
@@ -115,6 +145,10 @@ module Divine
       t1.get_field(field).referenced_types == t2.get_field(field).referenced_types
     end
     
+    #
+    # Check if there is any strcut has changes
+    # * *Args* :
+    #  - +*ss+ -> list of structs
     def check_freezed_structs(ss)
       ss.each do |s|
         if s.freezed?
@@ -126,6 +160,10 @@ module Divine
       end
     end
     
+    #
+    # Generate signature for given struct
+    # * *Args* :
+    #  - +*s+ -> struct object
     def calculate_signature(s)
       str = s.fields.map do |f|
         "#{f.name}:#{f.referenced_types.inspect}"

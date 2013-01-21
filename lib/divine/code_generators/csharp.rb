@@ -5,6 +5,10 @@ module Divine
 # Support base function needed to build Divine enviroment and classes corresponding to DSL structs
 #
   class CsharpHelperMethods < BabelHelperMethods
+    
+    #
+    # Return the header comment
+    #
     def get_header_comment
       get_header_comment_text.map do |s|
         "// #{s}"
@@ -788,7 +792,7 @@ EOS
   class CsharpGenerator < CsharpHelperMethods
 
 ##
-# Generate Java class(es)
+# Generate csharp class(es)
 # * *Args*    :
 #   - +structs+ -> Dictionary of structs
 #   - +opts+    -> Dictionary that contains generation params [file, debug, parent_class, target_dir]

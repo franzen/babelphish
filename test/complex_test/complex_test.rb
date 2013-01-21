@@ -14,6 +14,9 @@ struct 'Complex' do
   }
 end
 
+# Draw ERD for prev. structs
+Divine::GraphGenerator.new.draw("test/complex_test/", "graph", "png")
+
 if ARGV[0] == "ruby"
   Divine::CodeGenerator.new.generate(:ruby, file: 'test_complex.rb', module: 'BabelTest', parent_class: "Object", target_dir: 'test/complex_test/ruby_test')
 elsif ARGV[0] == "js"

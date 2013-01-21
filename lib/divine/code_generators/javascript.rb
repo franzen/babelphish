@@ -11,6 +11,10 @@ module Divine
 # Support base function needed to build base divine functions and DSL structs
 #
   class JavascriptHelperMethods < BabelHelperMethods
+
+    #
+    # Return the header comment
+    #
     def get_header_comment
       get_header_comment_text.map do |s|
         "// #{s}"
@@ -725,13 +729,14 @@ EOS
       return [{file: opts[:file], src: "#{javascript_get_begin_module(opts)}#{base_template.result({ toplevel_class: toplevel })}\n\n#{src.join("\n\n")}#{javascript_get_end_module(opts)}"}]
     end
 
-##
-# Build Header Comments
-
+    #
+    # Build Header Comments
+    #
     def javascript_get_begin_module(opts)
        "#{get_header_comment}\n\n"
     end
 
+    # Do nothing
     def javascript_get_end_module(opts)
       nil
     end

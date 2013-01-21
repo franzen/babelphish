@@ -5,6 +5,10 @@ module Divine
 # Support base function needed to build Divine enviroment and classes corresponding to DSL structs
 #
   class RubyHelperMethods < BabelHelperMethods
+
+    #
+    # Return the header comment
+    #
     def get_header_comment
       get_header_comment_text.map do |s|
         "# #{s}"
