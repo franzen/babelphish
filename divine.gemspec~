@@ -19,5 +19,5 @@ Gem::Specification.new do |gem|
   
   gem.add_dependency(%q<docile>, [">= 1.0.0"])
   gem.add_dependency(%q<erubis>, [">= 2.7.0"])
-  gem.add_dependency(%q<ruby-graphviz>, [">= 1.0.8"])
+  gem.add_dependency(%q<ruby-graphviz>, [">= 1.0.9"])
 end
