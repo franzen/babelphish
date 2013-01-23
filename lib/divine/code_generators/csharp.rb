@@ -82,6 +82,19 @@ namespace divine
             return ((long)readInt32(data) << 32) | (readInt32(data) & 0xFFFFFFFF);
         }
 
+	protected long readDint63(MemoryStream data)
+        {
+            int b = this.readInt8(data);
+            long val = b & 0x7F;
+            while ((b >> 7) == 1)
+            {
+                b = this.readInt8(data);
+                val = val << 7;
+                val = val | (uint)(b & 0x7F);
+            }
+            return val;
+        }
+
         protected bool readBool(MemoryStream data)
         {
             return readInt8(data) == 1;
@@ -272,15 +285,47 @@ namespace divine
             writeInt24((int)(v & 0xFFFFFF), output);
         }
 
-	    protected void writeSint64(long v, MemoryStream output) {
-		    if (v > long.MaxValue ) { 			// Max  9,223,372,036,854,775,807
-			    raiseError("Too large sInt64 number: " + v + ", Max = " + long.MaxValue);
-		    }else if(v < long.MinValue){ 		// Min -9,223,372,036,854,775,808
+	protected void writeSint64(long v, MemoryStream output) {
+	    if (v > long.MaxValue ) { 			// Max  9,223,372,036,854,775,807
+		raiseError("Too large sInt64 number: " + v + ", Max = " + long.MaxValue);
+	    }else if(v < long.MinValue){ 		// Min -9,223,372,036,854,775,808
                 raiseError("Too small sInt64 number: " + v + ", Min = " + long.MinValue);
-		    }
+	    }
             writeInt32((uint)((v >> 32) & 0xFFFFFFFF), output);
             writeInt32((uint)(v & 0xFFFFFFFF), output);
-	    }
+	}
+
+	
+
+	protected void writeDint63(long v, MemoryStream output)
+        {
+            if (v > long.MaxValue)
+            { 		// Max  9,223,372,036,854,775,807
+                raiseError("Too large Dynamic Int63 number: " + v + ", Max = " + long.MaxValue);
+            }
+            else if (v < long.MinValue)
+            { 		// Min 0
+                raiseError("Too small Dynamic Int63 number: " + v + ", Min = " + 0);
+            }
+            char[] charArray = Convert.ToString(v, 2).ToCharArray();
+            Array.Reverse(charArray);
+            MatchCollection matches = Regex.Matches(new String(charArray), ".{1,7}");
+            String[] bytes = new string[matches.Count];
+            for (int i = 0; i < matches.Count; i++)
+            {
+                String val = matches[i].Value;
+                val += new String(new char[7 - val.Length]).Replace("\\\\0", "0") + Math.Min(i, 1);
+                bytes[i] = val;
+            }
+            
+            for (int i = bytes.Length - 1; i >= 0; i--){
+                charArray = bytes[i].ToCharArray();
+                Array.Reverse(charArray);
+                String str = new String(charArray);
+                int t = Convert.ToInt32(str, 2);
+                this.writeInt8((byte)t, output);
+            }
+        }
 
         protected void writeBool(bool v, MemoryStream output)
         {
@@ -415,10 +460,10 @@ namespace divine
             {
                 v = v.Replace(" ", "");
                 int[] ss = new int[0];
-                bool contains_ipv6_letters = System.Text.RegularExpressions.Regex.IsMatch(v.Trim().ToLower(), "[0-9a-f]+");
-                bool contains_other_letters = System.Text.RegularExpressions.Regex.IsMatch(v.Trim().ToLower(), "[^:0-9a-f]+");
-                bool contains_more_seprators = System.Text.RegularExpressions.Regex.IsMatch(v.Trim().ToLower(), ":{3,}");
-                bool contains_one_shorthand = System.Text.RegularExpressions.Regex.Matches(v.Trim().ToLower(), ":{2}").Count <= 1;
+                bool contains_ipv6_letters = Regex.IsMatch(v.Trim().ToLower(), "[0-9a-f]+");
+                bool contains_other_letters = Regex.IsMatch(v.Trim().ToLower(), "[^:0-9a-f]+");
+                bool contains_more_seprators = Regex.IsMatch(v.Trim().ToLower(), ":{3,}");
+                bool contains_one_shorthand = Regex.Matches(v.Trim().ToLower(), ":{2}").Count <= 1;
                 // make sure of v must have only one "::" and no more than two of ":".
                 // e.g. 1::1::1 & 1:::1:205
                 if (v.Trim().Length != 0 && !contains_more_seprators && contains_one_shorthand && !contains_other_letters
@@ -568,6 +613,16 @@ EOS
 ##
 #  Generate default C# data types declaration values corresponding to each DSL types:
 #  * DSL Type --> Corresponding Default C# Value
+#  * dint63   --> 0 range -> [0 - 9,223,372,036,854,775,807]
+#   * 1 byte:  range ->  [0 - 127]
+#   * 2 bytes: range ->  [0 - 16,383]
+#   * 3 bytes: range ->  [0 - 2,097,151]
+#   * 4 bytes: range ->  [0 - 268,435,455]
+#   * 5 bytes: range ->  [0 - 34,359,738,367]
+#   * 6 bytes: range ->  [0 - 4,398,046,511,103]
+#   * 7 bytes: range ->  [0 - 562,949,953,421,311]
+#   * 8 bytes: range ->  [0 - 72,057,594,037,927,935]
+#   * 9 bytes: range ->  [0 - 9,223,372,036,854,775,807]
 #  * int8     --> 0 Range -> [0 - 255]
 #  * int16    --> 0 Range -> [0 - 65535]
 #  * int32    --> 0 Range -> [0 - 4.294.967.295]
@@ -601,7 +656,7 @@ EOS
         case types
         when :binary, :short_binary
           "new byte[0]"
-        when :int8, :int16, :int32, :sint32, :sint64
+        when :int8, :int16, :int32, :sint32, :sint64, :dint63
           "0"
         when :string, :ip_number
           "\"\""
@@ -662,7 +717,7 @@ EOS
           "uint"
         when :sint32
   	  "int"
-	when :sint64
+	when :sint64, :dint63
           "long"
         when :string, :ip_number
           "string"
@@ -835,7 +890,7 @@ EOS
       [
 	"System",
 	"System.Collections.Generic",
-	"System.Text",
+	"System.Text.RegularExpressions",
 	"System.IO"
         ].map do |i|
           "using #{i};"

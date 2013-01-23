@@ -70,6 +70,17 @@ module Divine
       return num
     end
 
+    def read_dint63(data)
+      byte = read_int8(data)
+      val  = byte & 0x7F
+      while (byte >> 7) == 1
+        byte = read_int8(data)
+        val = val << 7
+        val = val | byte & 0x7F
+      end
+      val
+    end
+
     def read_bool(data)
       read_int8(data) == 1
     end
@@ -162,10 +173,24 @@ module Divine
       v = v.to_i
       max = (2** (64 - 1)) - 1
       min = (2** (64 - 1) ) - (2** 64)
-      raise_error "Too large Sint32 number: #{v} , Max = #{max}" if v > max # Max  9.223.372.036.854.775.807
-      raise_error "Too small sInt32 number: #{v} , Min = #{min}" if v < min # Min -9.223.372.036.854.775.808
+      raise_error "Too large Sint64 number: #{v} , Max = #{max}" if v > max # Max  9.223.372.036.854.775.807
+      raise_error "Too small sInt64 number: #{v} , Min = #{min}" if v < min # Min -9.223.372.036.854.775.808
       write_int32( v >> 32 & 0xFFFFFFFF, out)
       write_int32( v & 0xFFFFFFFF, out)
+    end
+
+    def write_dint63(v, out)
+      v = v.to_i
+      max = (2** (64 - 1)) - 1
+      min = 0
+      raise_error "Too large Dynamic int63 number: #{v} , Max = #{max}" if v > max # Max  9.223.372.036.854.775.807
+      raise_error "Too small Dynamic int63 number: #{v} , Min = #{min}" if v < min # Min  0
+      
+      bytes = v.to_s(2).reverse.split(/([01]{7})/).reject{ |t| t == ""}.each_with_index.map{ |t, i| t = t + "0"*(7-t.length) + [i,1].min.to_s}
+      bytes.reverse.map{ |t| 
+                          val = t.reverse.to_i 2
+                          write_int8(val, out)
+                       }
     end
 
     def write_bool(v, out)
@@ -388,6 +413,16 @@ module Divine
 ##
 #  Generate default Ruby data types declaration values corresponding to each DSL types:
 #  * DSL Type --> Corresponding Default Ruby Value
+#  * dint63   --> 0 range -> [0 - 9,223,372,036,854,775,807]
+#   * 1 byte:  range ->  [0 - 127]
+#   * 2 bytes: range ->  [0 - 16,383]
+#   * 3 bytes: range ->  [0 - 2,097,151]
+#   * 4 bytes: range ->  [0 - 268,435,455]
+#   * 5 bytes: range ->  [0 - 34,359,738,367]
+#   * 6 bytes: range ->  [0 - 4,398,046,511,103]
+#   * 7 bytes: range ->  [0 - 562,949,953,421,311]
+#   * 8 bytes: range ->  [0 - 72,057,594,037,927,935]
+#   * 9 bytes: range ->  [0 - 9,223,372,036,854,775,807]
 #  * int8     --> 0 Range -> [0 - 255]
 #  * int16    --> 0 Range -> [0 - 65535]
 #  * int32    --> 0 Range -> [0 - 4.294.967.295]
@@ -406,7 +441,7 @@ module Divine
         "[]"
       when :map
         "{}"
-      when :int8, :int16, :int32, :sint32, :sint64
+      when :dint63, :int8, :int16, :int32, :sint32, :sint64
         "0"
       when :string, :ip_number
         "\"\""
