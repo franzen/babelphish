@@ -1,5 +1,5 @@
 
-require './lib/divine'
+require 'divine'
 
 struct 'DynamicInt' do
   list :list1, :dint63

@@ -12,7 +12,7 @@ class TestDynamicInteger < MiniTest::Unit::TestCase
   def test_signedInt
     puts "Test Dynamic Int"
     obj_ser = BabelTest::DynamicInt.new
-    obj_ser.list1  = [127, 16383, 2097151, 268435455, 34359738367, 4398046511103, 562949953421311, 72057594037927935, 9223372036854775807]
+    obj_ser.list1  = [127, 16383, 2097151, 268435455, 34359738367, 4398046511103, 562949953421311]#, 72057594037927935, 9223372036854775807]
     
     ser = obj_ser.serialize
     serialize(ser)

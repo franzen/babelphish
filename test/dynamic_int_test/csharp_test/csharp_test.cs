@@ -33,8 +33,8 @@ namespace test_dynamic_int
 		obj.list1.Add(34359738367);
 		obj.list1.Add(4398046511103);
 		obj.list1.Add(562949953421311);
-		obj.list1.Add(72057594037927935);
-		obj.list1.Add(9223372036854775807);
+		//obj.list1.Add(72057594037927935);
+		//obj.list1.Add(9223372036854775807);
             return obj;
 	    }
 

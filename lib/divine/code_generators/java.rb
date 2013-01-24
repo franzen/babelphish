@@ -204,12 +204,10 @@ abstract class Divine <%= toplevel_class %> {
 			raiseError("Too small Dynamic Int64 number: " + v + ", Min = " + 0);
 		}
 		String[] bytes = new StringBuffer(Long.toBinaryString(v)).reverse().toString().split("(?<=\\\\G.......)");
-		for (int i = 0; i < bytes.length; i++){
-			String s = bytes[i];
-			bytes[i] += new String(new char[7 - s.length()]).replace("\\\\0", "0") + Math.min(i, 1);  
-		}
+		
 		for (int i = bytes.length - 1; i >= 0; i--){
 			String s = bytes[i];
+			s += new String(new char[7 - s.length()]).replace("\\\\0", "0") + Math.min(i, 1);
 			int t = Integer.parseInt(new StringBuffer(s).reverse().toString(), 2);
 			this.writeInt8(t, out);
 		}

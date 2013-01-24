@@ -25,6 +25,7 @@ namespace :test  do
   desc "Run JS code test suite"
   task :js do
     generate_source('js')
+    system("node test/dynamic_int_test/js_test/js_test.js")
     system("node test/signed_int_test/js_test/js_test.js")
     system("node test/ipv6_test/js_test/js_test.js")
     system("node test/complex_test/js_test/js_test.js")

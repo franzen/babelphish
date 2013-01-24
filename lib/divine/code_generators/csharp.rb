@@ -310,21 +310,17 @@ namespace divine
             char[] charArray = Convert.ToString(v, 2).ToCharArray();
             Array.Reverse(charArray);
             MatchCollection matches = Regex.Matches(new String(charArray), ".{1,7}");
-            String[] bytes = new string[matches.Count];
-            for (int i = 0; i < matches.Count; i++)
+            for (int i = matches.Count - 1; i >= 0 ; i--)
             {
                 String val = matches[i].Value;
                 val += new String(new char[7 - val.Length]).Replace("\\\\0", "0") + Math.Min(i, 1);
-                bytes[i] = val;
-            }
-            
-            for (int i = bytes.Length - 1; i >= 0; i--){
-                charArray = bytes[i].ToCharArray();
+                charArray = val.ToCharArray();
                 Array.Reverse(charArray);
                 String str = new String(charArray);
                 int t = Convert.ToInt32(str, 2);
                 this.writeInt8((byte)t, output);
             }
+            
         }
 
         protected void writeBool(bool v, MemoryStream output)
