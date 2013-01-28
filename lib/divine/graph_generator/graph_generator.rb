@@ -24,7 +24,7 @@ module Divine
             simple_fields  << "#{f.name}: #{f.type}\n"
           }
           $all_structs[k][0].complex_fields.each { |f|
-            type = f.referenced_types.to_s.gsub(':','').gsub("[list,", "list[").gsub("[map,", "map[").gsub(/[\s]*/, "")
+            type = f.referenced_types.to_s.gsub(':','').gsub("[list,", "list[").gsub("[map,", "map[").gsub(/[\s]*/, "").gsub("[", "&lt;").gsub("]", "&gt;")
             $all_structs.keys.each do |l|
               if type.include?(l.to_s)
                 addRelation(l, k)
@@ -39,7 +39,7 @@ module Divine
       addLinks()
 
       # Generate output image
-      @graph.output( format.to_sym => "#{path}#{file_name}.#{format}" )
+      @graph.output( format.to_sym => File.join(path, "#{file_name}.#{format}") )
     end
   
 
@@ -59,7 +59,7 @@ module Divine
     def addLinks()
       @relations.each_pair do |src, trgs|
         trgs.each { |trg|
-          @graph.add_edges( @nodes_map[src], @nodes_map[trg] )
+          @graph.add_edges( @nodes_map[trg], @nodes_map[src] )
         }
       end
     end

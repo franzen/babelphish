@@ -2,6 +2,8 @@
 
 Divine provides a compact data interchange format for Ruby, Java and Javascript. Divine is similar to [Thrift](http://thrift.apache.org/) and [Protobuf](http://code.google.com/p/protobuf/), but I try to overcome of some of the shortcommings I think the other libraries have. 
 
+This software is still under active development and testing.
+
 
 ## Example
 
