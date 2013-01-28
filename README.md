@@ -108,7 +108,7 @@ We support C#, Java, Ruby and Javascript at the moment.
 	</tr>
 </table>
 
-## Example
+## Example 1
 
 
 ```ruby
@@ -197,6 +197,181 @@ console.log("DESERIALIZE");
 var c2 = new TestComplex();
 c2.deserialize(new BabelDataReader(ca));
 console.log(c2);
+```
+
+## Example 2
+```ruby
+require 'divine'
+
+struct 'SignedInt' do
+  list :list1, :sint32
+  list :list2, :sint64
+end
+
+Divine::GraphGenerator.new.draw(".", "graph", "jpg")
+
+Divine::CodeGenerator.new.generate(:java, file: 'test.java')
+Divine::CodeGenerator.new.generate(:csharp, file: 'test.cs')
+```
+a Java example that uses the generated file test.java
+```java
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+
+public class JavaTest {
+
+	public void testSignedInt() throws IOException {
+		SignedInt ser = buildObj();
+		
+		serialize(ser);
+		byte[] res = deserialize();
+
+		SignedInt deser = new SignedInt();
+		deser.deserialize(new ByteArrayInputStream(res));
+
+		compare(ser, deser);
+	}
+
+	public SignedInt buildObj() {
+		SignedInt obj = new SignedInt();
+		obj.list1   = new ArrayList<Integer>(){{
+			add(-1);
+			add(-2);
+			add(-3);
+			add(Integer.MAX_VALUE);
+			add(Integer.MIN_VALUE);
+		}};
+		
+		obj.list2   = new ArrayList<Long>(){{
+			add(-1L);
+			add(-2L);
+			add(-3L);
+			add( (long)Math.pow(2, 54-1)-1 );
+			add( (long)(Math.pow(2, (54-1)) - Math.pow(2, 54)) );
+		}};
+
+		return obj;
+	}
+
+	public void compare(SignedInt obj1, SignedInt obj2) {
+		for (int i = 0; i < obj1.list1.size(); i++){
+			System.out.println("Ser = " + obj1.list1.get(i) + ", Deser = " + obj2.list1.get(i));
+		}		
+		for (int i = 0; i < obj1.list2.size(); i++){
+			System.out.println("Ser = " + obj1.list2.get(i) + ", Deser = " + obj2.list2.get(i));
+		}
+	}
+
+	public void serialize(Divine obj) throws IOException {
+		byte[] data = obj.serialize();
+		File file = new File("bin.babel");
+		try {
+			new FileOutputStream(file).write(data);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public byte[] deserialize() throws IOException{
+		File file = new File("bin.babel");
+		byte[] data = new byte[(int) file.length()];
+		try {
+			new FileInputStream(file).read(data);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return data;
+	}
+
+}
+```
+And a C# example that uses the generated file test.cs
+```csharp
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.IO;
+using divine;
+
+namespace test
+{
+    class divine
+    {
+        public static void Main(String[] args)
+        {
+            SignedInt ser = buildObj();
+            serialize(ser);
+            byte[] res = deserialize();
+
+            SignedInt deser = new SignedInt();
+            deser.deserialize(new MemoryStream(res));
+
+            compare(ser, deser);
+   
+            System.Console.Read();
+            
+        }
+
+        public static SignedInt buildObj() {
+		SignedInt obj = new SignedInt();
+		obj.list1.Add(-1);
+		obj.list1.Add(-2);
+		obj.list1.Add(-3);
+		obj.list1.Add(int.MaxValue);
+		obj.list1.Add(int.MinValue);
+
+		obj.list2.Add(-1);
+		obj.list2.Add(-2);
+		obj.list2.Add(-3);
+		obj.list2.Add( (long) Math.Pow(2, 53) -1 );
+		obj.list2.Add( (long) (Math.Pow(2, 53) - Math.Pow(2, 54)) );
+            return obj;
+	    }
+
+        public static void compare(SignedInt obj1, SignedInt obj2)
+        {
+            for (int i = 0; i < obj1.list1.Count; i++)
+            {
+                System.Console.Write("Ser = " + obj1.list1[i] + ", Deser = " + obj2.list1[i] + "\n");
+            }
+            for (int i = 0; i < obj1.list2.Count; i++)
+            {
+                System.Console.Write("Ser = " + obj1.list2[i] + ", Deser = " + obj2.list2[i] + "\n");
+            }
+        }
+
+        public static void serialize(Divine obj)
+        {
+            try
+            {
+                byte[] data = obj.serialize();
+                File.WriteAllBytes("test/signed_int_test/csharp_test/bin.babel.csharp", data);                
+            }
+            catch (System.IO.IOException ex)
+            {
+                throw ex;
+            }
+	}
+
+	public static byte[] deserialize()
+	{
+            try
+            {
+                byte[] data = File.ReadAllBytes("test/signed_int_test/csharp_test/bin.babel.csharp");
+                return data;
+            }
+            catch (System.IO.IOException ex)
+            {
+                throw ex;
+            }
+	}
+            
+    }
+}
 ```
 
 ### Versioning
