@@ -349,7 +349,7 @@ namespace test
             try
             {
                 byte[] data = obj.serialize();
-                File.WriteAllBytes("test/signed_int_test/csharp_test/bin.babel.csharp", data);                
+                File.WriteAllBytes("bin.babel", data);                
             }
             catch (System.IO.IOException ex)
             {
@@ -361,7 +361,7 @@ namespace test
 	{
             try
             {
-                byte[] data = File.ReadAllBytes("test/signed_int_test/csharp_test/bin.babel.csharp");
+                byte[] data = File.ReadAllBytes("bin.babel");
                 return data;
             }
             catch (System.IO.IOException ex)
