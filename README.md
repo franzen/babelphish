@@ -24,49 +24,50 @@ We support C#, Java, Ruby and Javascript at the moment.
 	</tr>
 	<tr>
 		<td>int16</td>
-		<td>0-65.535</td>
+		<td>0-65,535</td>
 		<td>0x00-0xFFFF</td>
 		<td>Unsinged integer stored in two bytes</td>
 	</tr>
 	<tr>
 		<td>int24</td>
-		<td>0-16.777.215</td>
+		<td>0-16,777,215</td>
 		<td>0x00-0xFFFFFF</td>
 		<td>Unsinged integer stored in three bytes</td>
 	</tr>
 	<tr>
 		<td>int32</td>
-		<td>0-4.294.967.295</td>
+		<td>0-4,294,967,295</td>
 		<td>0x00-0xFFFFFFFF</td>
 		<td>Unsinged integer stored in four bytes</td>
 	</tr>
 	<tr>
 		<td>dint63</td>
-		<td>0-9.223.372.036.854.775.807</td>
+		<td>0-9,223,372,036,854,775,807</td>
 		<td>0x00-0x7FFFFFFFFFFFFFFF</td>
 		<td>The dynamic int 63 will use between 1 to 9 bytes to represent the value. It will use 1 bit/byte to keep information if the next byte is used for the dynamic int
-			<pre>
-				1 byte:  127
-				2 bytes: 16,383
-				3 bytes: 2,097,151
-				4 bytes: 268,435,455
-				5 bytes: 34,359,738,367
-				6 bytes: 4,398,046,511,103
-				7 bytes: 562,949,953,421,311
-				8 bytes: 72,057,594,037,927,935
-				9 bytes: 9,223,372,036,854,775,807				
-			</pre>
+			<table>
+				<tr><th>Size</th><th>Max value</th></tr>
+				<tr><td>1 byte</td><td>127</td></tr>
+				<tr><td>2 bytes</td><td>16,383</td></tr>
+				<tr><td>3 bytes</td><td>2,097,151</td></tr>
+				<tr><td>4 bytes</td><td>268,435,455</td></tr>
+				<tr><td>5 bytes</td><td>34,359,738,367</td></tr>
+				<tr><td>6 bytes</td><td>4,398,046,511,103</td></tr>
+				<tr><td>7 bytes</td><td>562,949,953,421,311</td></tr>
+				<tr><td>8 bytes</td><td>72,057,594,037,927,935</td></tr>
+				<tr><td>9 bytes</td><td>9,223,372,036,854,775,807</td></tr>
+			</table>
 		</td>
 	</tr>
 	<tr>
 		<td>sint32</td>
-		<td>-2.147.483.648 to 2.147.483.647</td>
+		<td>-2,147,483,648 to 2,147,483,647</td>
 		<td></td>
 		<td>A signed integer that requires 4 bytes</td>
 	</tr>
 	<tr>
 		<td>sint64</td>
-		<td>-9.223.372.036.854.775.808 to 9.223.372.036.854.775.807</td>
+		<td>-9,223,372,036,854,775,808 to 9,223,372,036,854,775,807</td>
 		<td></td>
 		<td>A signed integer that requires 8 bytes</td>
 	</tr>
@@ -78,12 +79,24 @@ We support C#, Java, Ruby and Javascript at the moment.
 		<th>Description</th>
 	</tr>
 	<tr>
+		<td>bool</td>
+		<td>Write a boolean value requiring 1 byte</td>
+	</tr>
+	<tr>
+		<td>binary</td>
+		<td>Write a byte array of max 4,294,967,295 bytes</td>
+	</tr>
+	<tr>
+		<td>short_binary</td>
+		<td>Write a byte array of max 255 bytes</td>
+	</tr>
+	<tr>
 		<td>string</td>
-		<td>A UTF-8 based string of max 65.535 bytes (and one UTF8 char will between 1 to 4 bytes)</td>
+		<td>A UTF-8 based string of max 65,535 bytes (and one UTF8 char is represented by between 1 to 4 bytes)</td>
 	</tr>
 	<tr>
 		<td>ip_number</td>
-		<td>A IPv4 or IPv6 number as a string</td>
+		<td>A IPv4 or IPv6 number as a string. A IPv4 number requires 4 bytes, while a IPv6 number may </td>
 	</tr>
 	<tr>
 		<td>list</td>
@@ -251,6 +264,11 @@ To generate a graphviz diagram of your defined structs, add the following line t
 ```ruby
 Divine::GraphGenerator.new.draw(".", "graph", "jpg")
 ```
+
+
+## Caveats
+Javascript does not support larger numbers than 2^53, a runtime error is thrown if you try to deserialize bigger number
+
 
 
 ## Change log
