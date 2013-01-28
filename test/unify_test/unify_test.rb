@@ -14,7 +14,8 @@ class TestUnify < MiniTest::Unit::TestCase
              	"test/binaryTree_test/",
              	"test/complex_test/",
         	"test/ipv6_test/",
-		"test/signed_int_test/"
+		"test/signed_int_test/",
+		"test/dynamic_int_test/"
             ]
     paths.each do |path|
       ruby   = readFile("#{path}ruby_test/bin.babel.rb")

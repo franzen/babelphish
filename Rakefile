@@ -11,6 +11,7 @@ namespace :test  do
   desc "Run Ruby code test suite"
   task :ruby do
     generate_source('ruby')
+    ruby "test/dynamic_int_test/ruby_test/ruby_test.rb"
     ruby "test/signed_int_test/ruby_test/ruby_test.rb"
     ruby "test/ipv6_test/ruby_test/ruby_test.rb"
     ruby "test/complex_test/ruby_test/ruby_test.rb"
@@ -24,6 +25,7 @@ namespace :test  do
   desc "Run JS code test suite"
   task :js do
     generate_source('js')
+    system("node test/dynamic_int_test/js_test/js_test.js")
     system("node test/signed_int_test/js_test/js_test.js")
     system("node test/ipv6_test/js_test/js_test.js")
     system("node test/complex_test/js_test/js_test.js")
@@ -37,8 +39,7 @@ namespace :test  do
   desc "Run java code test suite"
   task :java do
     generate_source('java')
-    #test_csharp("signed_float")
-
+    test_java("dynamic_int")
     test_java("signed_int")
     test_java("ipv6")
     test_java("complex")
@@ -52,7 +53,7 @@ namespace :test  do
   desc "Run cSharp code test suite"
   task :csharp do
     generate_source('csharp')
-
+    test_csharp("dynamic_int")
     test_csharp("signed_int")
     test_csharp("ipv6")
     test_csharp("complex")
@@ -82,6 +83,7 @@ end
 
 def generate_source(lang)
   puts "Divine Version #{Divine::VERSION}"
+  ruby "test/dynamic_int_test/dynamic_int_test.rb #{lang}"
   ruby "test/signed_int_test/signed_int_test.rb #{lang}"
   ruby "test/ipv6_test/ipv6_test.rb #{lang}"
   ruby "test/complex_test/complex_test.rb #{lang}"

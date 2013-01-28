@@ -64,6 +64,17 @@ abstract class Divine <%= toplevel_class %> {
 		return (readInt32(data) << 32) | (readInt32(data) & 0xFFFFFFFFL);
 	}
 
+	protected long readDint63(ByteArrayInputStream data) {
+		int b = readInt8(data);
+		long val = b & 0x7F;
+		while((b >> 7) == 1){
+			b = readInt8(data);
+			val = val << 7;
+			val = val | b & 0x7F;
+		}
+		return val;
+	}
+
 	protected boolean readBool(ByteArrayInputStream data) {
 		return readInt8(data) == 1;
 	}
@@ -178,12 +189,28 @@ abstract class Divine <%= toplevel_class %> {
 
 	protected void writeSint64(long v, ByteArrayOutputStream out) {
 		if (v > Long.MAX_VALUE) { 		// Max  9,223,372,036,854,775,807
-			raiseError("Too large sInt64 number: " + v + ", Max = " + Integer.MAX_VALUE);
+			raiseError("Too large sInt64 number: " + v + ", Max = " + Long.MAX_VALUE);
 		}else if(v < Long.MIN_VALUE){ 		// Min -9,223,372,036,854,775,808
-			raiseError("Too small sInt64 number: " + v + ", Min = " + Integer.MIN_VALUE);
+			raiseError("Too small sInt64 number: " + v + ", Min = " + Long.MIN_VALUE);
 		}
 		writeInt32(((v >> 32) & 0xFFFFFFFFL), out);
 		writeInt32( (v & 0xFFFFFFFFL) , out);
+	}
+
+	protected void writeDint63(long v, ByteArrayOutputStream out) {
+		if (v > Long.MAX_VALUE) { 	// Max  9,223,372,036,854,775,807
+			raiseError("Too large Dynamic Int64 number: " + v + ", Max = " + Long.MAX_VALUE);
+		}else if(v < 0){ 		// Min 0
+			raiseError("Too small Dynamic Int64 number: " + v + ", Min = " + 0);
+		}
+		String[] bytes = new StringBuffer(Long.toBinaryString(v)).reverse().toString().split("(?<=\\\\G.......)");
+		
+		for (int i = bytes.length - 1; i >= 0; i--){
+			String s = bytes[i];
+			s += new String(new char[7 - s.length()]).replace("\\\\0", "0") + Math.min(i, 1);
+			int t = Integer.parseInt(new StringBuffer(s).reverse().toString(), 2);
+			this.writeInt8(t, out);
+		}
 	}
 
 	protected void writeBool(boolean v, ByteArrayOutputStream out) {
@@ -378,6 +405,16 @@ EOS
 ##
 #  Generate default java data types declaration values corresponding to each DSL types:
 #  * DSL Type --> Corresponding Default Java Value
+#  * dint63   --> 0 range -> [0 - 9,223,372,036,854,775,807]
+#   * 1 byte:  range ->  [0 - 127]
+#   * 2 bytes: range ->  [0 - 16,383]
+#   * 3 bytes: range ->  [0 - 2,097,151]
+#   * 4 bytes: range ->  [0 - 268,435,455]
+#   * 5 bytes: range ->  [0 - 34,359,738,367]
+#   * 6 bytes: range ->  [0 - 4,398,046,511,103]
+#   * 7 bytes: range ->  [0 - 562,949,953,421,311]
+#   * 8 bytes: range ->  [0 - 72,057,594,037,927,935]
+#   * 9 bytes: range ->  [0 - 9,223,372,036,854,775,807]
 #  * int8     --> 0  Range -> [0 - 255]
 #  * int16    --> 0  Range -> [0 - 65535]
 #  * int32    --> 0L Range -> [0 - 4.294.967.295]
@@ -413,7 +450,7 @@ EOS
           is_reference_type ? "new Byte[0]" : "new byte[0]"
         when :int8, :int16, :sint32
           "0"
-        when :int32, :sint64
+        when :int32, :sint64, :dint63
           "0L"
         when :string, :ip_number
           "\"\""
@@ -435,6 +472,7 @@ EOS
 #  * sint32   --> int
 #  * int32    --> long
 #  * sint64   --> long
+#  * dint63   --> long
 #  * string   --> String
 #  * ip_number--> String
 #  * binary   --> Byte[]
@@ -468,7 +506,7 @@ EOS
           is_reference_type ? "Byte[]" : "byte[]"
         when :int8, :int16, :sint32
           is_reference_type ? "Integer" : "int"
-        when :int32, :sint64
+        when :int32, :sint64, :dint63
           is_reference_type ? "Long" : "long"
         when :string, :ip_number
           "String"

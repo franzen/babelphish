@@ -127,6 +127,29 @@ DivineHelper.prototype.read_sint64 = function (data) {
     }
 }
 
+DivineHelper.prototype.read_dint63 = function (data) {
+    var byte = this.read_int8(data)
+    var part1 = part2 = "";				// To hold first 32-bit and second 32-bit respectively
+    var bin =  byte & 0x7F;				// tmp To hold binary string
+    var numBytes = 1;
+    while ((byte >> 7) == 1) {
+      byte = this.read_int8(data)
+      bin = bin << 7
+      bin = bin | byte & 0x7F
+      numBytes ++;
+      if (numBytes == 4 && (byte >> 7) == 1){
+        part1 = bin.toString(2);
+        bin = 1;					// To avoid unshifting of zero
+      }
+    }
+    bin = bin.toString(2);
+    if (bin.length > 1 && part1 != "")
+      bin = bin.substr(1, bin.length);
+    part2 = bin;
+    var val = parseInt(part1 + part2, 2);
+    return val;
+}
+
 DivineHelper.prototype.read_binary = function (data) {
     return data.read(this.read_int32(data));
 };
@@ -241,6 +264,23 @@ DivineHelper.prototype.write_sint64 = function (v, out) {
     part2  = binStr.substr(binStr.length - 32, binStr.length);
     this.write_int32(parseInt(part1, 2), out);
     this.write_int32(parseInt(part2, 2), out);
+}
+
+DivineHelper.prototype.write_dint63 = function (v, out) {
+    var max =  Math.pow(2, 53) - 1;
+    var min = 0;
+    if (v > max)			// Max  9,007,199,254,740,991
+      this.raise_error("Too large Dynamic Int53 number: " + v + ", Max = " + max);
+    if (v < min)	 		// Min 0
+      this.raise_error("Too small Dynamic Int53 number: " + v + ", Min = " + min);
+    
+    bytes = v.toString(2).split("").reverse().join("").split(/(.{7})/).filter(function(t){if (t != "" ) return true});
+    for (var i = bytes.length - 1; i >= 0; i--){
+       var bin = bytes[i];
+       bin += Array(8 - bin.length).join("0") + Math.min(i,1);
+       var val = parseInt(bin.split("").reverse().join(""), 2);
+       this.write_int8(val, out);  
+    }
 }
 
 DivineHelper.prototype.write_bool = function (v, out) {
@@ -558,6 +598,15 @@ EOS
 ##
 #  Generate default JS data types declaration values corresponding to each DSL types:
 #  * DSL Type --> Corresponding Default JS Value
+#  * dint63   --> 0 range -> [0 - 9.007.199.254.740.991]
+#   * 1 byte:  range ->  [0 - 127]
+#   * 2 bytes: range ->  [0 - 16,383]
+#   * 3 bytes: range ->  [0 - 2,097,151]
+#   * 4 bytes: range ->  [0 - 268,435,455]
+#   * 5 bytes: range ->  [0 - 34,359,738,367]
+#   * 6 bytes: range ->  [0 - 4,398,046,511,103]
+#   * 7 bytes: range ->  [0 - 562,949,953,421,311]
+#   * 8 bytes: range ->  [0 - 9.007.199.254.740.991] (limited by 53-bit)
 #  * int8     --> 0 Range -> [0 - 255]
 #  * int16    --> 0 Range -> [0 - 65535]
 #  * int32    --> 0 Range -> [0 - 4.294.967.295]
@@ -576,7 +625,7 @@ EOS
         "[]"
       when :map
         "{}"
-      when :int8, :int16, :int32, :sint32, :sint64
+      when :int8, :int16, :int32, :sint32, :sint64, :dint63
         "0"
       when :string, :ip_number
         "\"\""

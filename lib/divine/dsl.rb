@@ -83,6 +83,12 @@ module Divine
   end
 
   #
+  # Encapsulation for dynamic integer date type
+  #
+  class DynamicInteger63Definition < SimpleDefinition
+  end
+
+  #
   # Encapsulation for signed integer 64-bit date type
   #
   class SInteger64Definition < SimpleDefinition
@@ -179,6 +185,7 @@ module Divine
 
   # Contains all supported data type
   $available_types = {
+    dint63: DynamicInteger63Definition,
     sint64: SInteger64Definition,
     sint32: SInteger32Definition,
     int32: Integer32Definition,
