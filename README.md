@@ -4,6 +4,7 @@ Divine provides a compact data interchange format for Ruby, Java and Javascript.
 
 This software is still under active development and testing.
 
+We support C#, Java, Ruby and Javascript at the moment.
 
 ## Example
 
@@ -152,6 +153,28 @@ Divine::CodeGenerator.new.generate(:ruby, file: 'test_babel.rb')
 ```
 
 It is now not possible to alter _Foobar_ by accident. If you make a change to the struct, you will also need to provide a correct MD5 sum.
+
+
+### Graphviz
+
+To generate a graphviz diagram of your defined structs, add the following line to your definition file
+
+```ruby
+Divine::GraphGenerator.new.draw(".", "graph", "jpg")
+```
+
+
+## Change log
+Version 0.0.4
+
+* Added dint63 (Dynamic Int 63)
+* Added graphviz graph generation
+
+Version 0.0.3
+
+* Added C# code generator
+* Added sint64 (Signed Int 64)
+* Added versioning and freezing
 
 
 ## Installation
