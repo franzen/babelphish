@@ -6,6 +6,95 @@ This software is still under active development and testing.
 
 We support C#, Java, Ruby and Javascript at the moment.
 
+
+## Supported types
+
+<table>
+	<tr>
+		<th>Name</th>
+		<th>Range</th>
+		<th>Range (hex)</th>
+		<th>Description</th>
+	</tr>
+	<tr>
+		<td>int8</td>
+		<td>0-255</td>
+		<td>0x00-0xFF</td>
+		<td>Unsinged integer stored in a singe byte</td>
+	</tr>
+	<tr>
+		<td>int16</td>
+		<td>0-65.535</td>
+		<td>0x00-0xFFFF</td>
+		<td>Unsinged integer stored in two bytes</td>
+	</tr>
+	<tr>
+		<td>int24</td>
+		<td>0-16.777.215</td>
+		<td>0x00-0xFFFFFF</td>
+		<td>Unsinged integer stored in three bytes</td>
+	</tr>
+	<tr>
+		<td>int32</td>
+		<td>0-4.294.967.295</td>
+		<td>0x00-0xFFFFFFFF</td>
+		<td>Unsinged integer stored in four bytes</td>
+	</tr>
+	<tr>
+		<td>dint63</td>
+		<td>0-9.223.372.036.854.775.807</td>
+		<td>0x00-0x7FFFFFFFFFFFFFFF</td>
+		<td>The dynamic int 63 will use between 1 to 9 bytes to represent the value. It will use 1 bit/byte to keep information if the next byte is used for the dynamic int
+			<pre>
+				1 byte:  127
+				2 bytes: 16,383
+				3 bytes: 2,097,151
+				4 bytes: 268,435,455
+				5 bytes: 34,359,738,367
+				6 bytes: 4,398,046,511,103
+				7 bytes: 562,949,953,421,311
+				8 bytes: 72,057,594,037,927,935
+				9 bytes: 9,223,372,036,854,775,807				
+			</pre>
+		</td>
+	</tr>
+	<tr>
+		<td>sint32</td>
+		<td>-2.147.483.648 to 2.147.483.647</td>
+		<td></td>
+		<td>A signed integer that requires 4 bytes</td>
+	</tr>
+	<tr>
+		<td>sint64</td>
+		<td>-9.223.372.036.854.775.808 to 9.223.372.036.854.775.807</td>
+		<td></td>
+		<td>A signed integer that requires 8 bytes</td>
+	</tr>
+</table>
+
+<table>
+	<tr>
+		<th>Name</th>
+		<th>Description</th>
+	</tr>
+	<tr>
+		<td>string</td>
+		<td>A UTF-8 based string of max 65.535 bytes (and one UTF8 char will between 1 to 4 bytes)</td>
+	</tr>
+	<tr>
+		<td>ip_number</td>
+		<td>A IPv4 or IPv6 number as a string</td>
+	</tr>
+	<tr>
+		<td>list</td>
+		<td>A list of items</td>
+	</tr>
+	<tr>
+		<td>map</td>
+		<td>A hash-map of key/value items</td>
+	</tr>
+</table>
+
 ## Example
 
 
@@ -173,7 +262,7 @@ Version 0.0.4
 Version 0.0.3
 
 * Added C# code generator
-* Added sint64 (Signed Int 64)
+* Added sint64 and sint64 (Signed Int 32 and 64)
 * Added versioning and freezing
 
 
