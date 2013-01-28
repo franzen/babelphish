@@ -96,7 +96,7 @@ We support C#, Java, Ruby and Javascript at the moment.
 	</tr>
 	<tr>
 		<td>ip_number</td>
-		<td>A IPv4 or IPv6 number as a string. A IPv4 number requires 4 bytes, while a IPv6 number may </td>
+		<td>A IPv4 or IPv6 number as a string. An IPv4 number require 5 bytes, while an IPv6 number will require somewhere between 3-17 bytes.</td>
 	</tr>
 	<tr>
 		<td>list</td>
@@ -267,8 +267,7 @@ Divine::GraphGenerator.new.draw(".", "graph", "jpg")
 
 
 ## Caveats
-Javascript does not support larger numbers than 2^53, a runtime error is thrown if you try to deserialize bigger number
-
+Javascript does only support numbers in the range of -9,007,199,254,740,992 to 9,007,199,254,740,991, a runtime error is thrown if you try to deserialize bigger number.
 
 
 ## Change log
