@@ -445,6 +445,8 @@ module Divine
         "0"
       when :string, :ip_number
         "\"\""
+      when :bool
+        false
       else
         raise "Unkown field type #{field.type}"
       end
