@@ -81,7 +81,7 @@ abstract class Divine <%= toplevel_class %> {
 
 	protected String readString(ByteArrayInputStream data) throws IOException {
 		// Force utf8
-		return new String(readBytes(readInt16(data), data), UTF8);
+		return new String(readBytes((int)readDint63(data), data), UTF8);
 	}
 
 	private byte[] readBytes(int size, ByteArrayInputStream data) throws IOException {
@@ -91,19 +91,15 @@ abstract class Divine <%= toplevel_class %> {
 	}
 
 	protected byte[] readBinary(ByteArrayInputStream data) throws IOException {
-		long c = readInt32(data);
+		long c = readDint63(data);
 		if (c > Integer.MAX_VALUE) {
 			throw new IndexOutOfBoundsException("Binary data to big for java");
 		}
 		return readBytes((int) c, data);
 	}
 
-	protected byte[] readShortBinary(ByteArrayInputStream data) throws IOException {
-		return readBytes(readInt8(data), data);
-	}
-
 	protected String readIpNumber(ByteArrayInputStream data) throws IOException {
-		byte[] ips = readShortBinary(data);		
+		byte[] ips = readBytes(readInt8(data), data);
 		if(ips.length == 4){
 			return readIpv4Number(ips);
 		} else{
@@ -207,8 +203,10 @@ abstract class Divine <%= toplevel_class %> {
 		
 		for (int i = bytes.length - 1; i >= 0; i--){
 			String s = bytes[i];
-			s += new String(new char[7 - s.length()]).replace("\\\\0", "0") + Math.min(i, 1);
-			int t = Integer.parseInt(new StringBuffer(s).reverse().toString(), 2);
+			char[] zeros = new char[ 7 - s.length()];
+      Arrays.fill(zeros, '0');
+      s += new String(zeros) + Math.min(i, 1);
+      int t = Integer.parseInt(new StringBuffer(s).reverse().toString(), 2);
 			this.writeInt8(t, out);
 		}
 	}
@@ -222,7 +220,7 @@ abstract class Divine <%= toplevel_class %> {
 		if (bs.length > 0xFFFF) {
 			raiseError("Too large string: " + bs.length + " bytes");
 		}
-		writeInt16(bs.length, out);
+		writeDint63(bs.length, out);
 		out.write(bs);
 	}
 
@@ -230,7 +228,7 @@ abstract class Divine <%= toplevel_class %> {
 		if (v.length > 0xFFFFFFFFL) {
 			raiseError("Too large binary: " + v.length + " bytes");
 		}
-		writeInt32(v.length, out);
+		writeDint63(v.length, out);
 		out.write(v);
 	}
 
@@ -243,14 +241,6 @@ abstract class Divine <%= toplevel_class %> {
 		for(int i = 0; i < v.length; i++){
 			this.writeInt16(v[i], out);
 		}
-	}
-
-	protected void writeShortBinary(byte[] v, ByteArrayOutputStream out) throws IOException {
-		if (v.length > 0xFF) {
-			raiseError("Too large short_binary: " + v.length + " bytes");
-		}
-		writeInt8(v.length, out);
-		out.write(v);
 	}
 
 	protected void writeIpNumber(String v, ByteArrayOutputStream out) throws IOException {
@@ -271,7 +261,8 @@ abstract class Divine <%= toplevel_class %> {
 			}
 		}
 		if (ss.length == 0 || ss.length == 4) {
-			writeShortBinary(ss, out);
+			writeInt8(ss.length, out);
+      out.write(ss);
 		} else {
 			raiseError("Unknown IP v4 number " + v); // Only IPv4 for now 
 		}
@@ -423,7 +414,6 @@ EOS
 #  * string   --> ""
 #  * ip_number--> ""
 #  * binary   --> new Byte[0]
-#  * short_binary --> new Byte[0]
 #  * list     --> new ArrayList<type>()
 #  * map      --> new HashMap<keyType, valueType>()
 
@@ -446,7 +436,7 @@ EOS
 
       else
         case types
-        when :binary, :short_binary
+        when :binary
           is_reference_type ? "new Byte[0]" : "new byte[0]"
         when :int8, :int16, :sint32
           "0"
@@ -454,6 +444,8 @@ EOS
           "0L"
         when :string, :ip_number
           "\"\""
+        when :bool
+          false
         else
           if $all_structs[types]
             types
@@ -476,7 +468,6 @@ EOS
 #  * string   --> String
 #  * ip_number--> String
 #  * binary   --> Byte[]
-#  * short_binary --> Byte[]
 #  * list     --> ArrayList<type>
 #  * map      --> HashMap<keyType, valueType>
 
@@ -502,7 +493,7 @@ EOS
 
       else
         case types
-        when :binary, :short_binary
+        when :binary
           is_reference_type ? "Byte[]" : "byte[]"
         when :int8, :int16, :sint32
           is_reference_type ? "Integer" : "int"
@@ -510,6 +501,8 @@ EOS
           is_reference_type ? "Long" : "long"
         when :string, :ip_number
           "String"
+        when :bool
+          "boolean"
         else
           if $all_structs[types]
             types
@@ -532,7 +525,7 @@ EOS
           nv = get_fresh_variable_name
           idx = get_fresh_variable_name
           return [
-                  "writeInt32(#{var}.size(), baos);",
+                  "writeDint63(#{var}.size(), baos);",
                   "for(int #{idx}=0; #{idx}<#{var}.size(); #{idx}++) {",
                   :indent,
                   "#{java_get_type_declaration types[1]} #{nv} = #{var}.get(#{idx});",
@@ -544,7 +537,7 @@ EOS
           nv1 = get_fresh_variable_name      
           nv2 = get_fresh_variable_name
           return [
-                  "writeInt32(#{var}.size(), baos);",
+                  "writeDint63(#{var}.size(), baos);",
                   "for(#{java_get_type_declaration types[1]} #{nv1} : #{var}.keySet()) {",
                   :indent,
                   "#{java_get_type_declaration types[2]} #{nv2} = #{var}.get(#{nv1});",
@@ -583,7 +576,7 @@ EOS
           iter = get_fresh_variable_name
           return [
                   "#{"#{java_get_type_declaration(types)} " unless var.include? "this."}#{var} = #{java_get_empty_declaration(types)};",
-                  "int #{count} = (int)this.readInt32(bais);",
+                  "int #{count} = (int)this.readDint63(bais);",
                   "for(int #{iter}=0; #{iter}<#{count}; #{iter}++) {",
                   :indent,
                   java_deserialize_internal(nv, types[1]),
@@ -597,7 +590,7 @@ EOS
           nv2 = get_fresh_variable_name
           iter = get_fresh_variable_name
           return ["#{"#{java_get_type_declaration(types)} " unless var.include? "this."}#{var} = #{java_get_empty_declaration(types)};",
-                  "int #{count} = (int)readInt32(bais);",
+                  "int #{count} = (int)readDint63(bais);",
                   "for(int #{iter}=0; #{iter}<#{count}; #{iter}++) {",
                   :indent,
                   java_deserialize_internal(nv1, types[1]),
@@ -684,6 +677,7 @@ EOS
         "java.io.ByteArrayOutputStream",
         "java.io.IOException",
         "java.util.ArrayList",
+        "java.util.Arrays",
         "java.util.HashMap",
         "java.util.regex.Pattern",
         "java.nio.charset.Charset"

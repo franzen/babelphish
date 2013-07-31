@@ -86,19 +86,15 @@ module Divine
     end
 
     def read_string(data)
-      data.read(read_int16(data)).force_encoding('UTF-8')
+      data.read(read_dint63(data)).force_encoding('UTF-8')
     end
 
     def read_binary(data)
-      data.read(read_int32(data))
-    end
-
-    def read_short_binary(data)
-      data.read(read_int8(data))
+      data.read(read_dint63(data))
     end
 
     def read_ip_number(data)
-      ips = read_short_binary(data)
+      ips = data.read(read_int8(data))
       if ips.size == 4
         read_ipv4_number(ips)
       else
@@ -200,20 +196,20 @@ module Divine
     def write_string(v, out)
       s = force_to_utf8_string(v)
       raise_error "Too large string: #{s.bytesize} bytes" if s.bytesize > 0xFFFF
-      write_int16(s.bytesize, out)
+      write_dint63(s.bytesize, out)
       out << s.bytes.to_a
     end
 
     def write_binary(v, out)
       if v.is_a?(Array)
         raise_error "Too large binary: #{v.size} (#{v.class.name})" unless v.size < 0xFFFFFFFF 
-        write_int32(v.size, out)
+        write_dint63(v.size, out)
         v.each do |x|
           write_int8(x, out)
         end
       elsif v.is_a?(String)
         raise_error "Too large binary: #{v.size} (#{v.class.name})" unless v.size < 0xFFFFFFFF 
-        write_int32(v.size, out)
+        write_dint63(v.size, out)
         out << v.bytes.to_a
       else 
         raise_error "Unsupported binary 'nil'" if v == nil
@@ -228,23 +224,6 @@ module Divine
         v.each do |x|
           write_int16(x, out)
         end
-      else 
-        raise_error "Unsupported binary 'nil'" if v == nil
-        raise_error "Unsupported binary of type '#{v.class.name}'"
-      end
-    end
-
-    def write_short_binary(v, out)
-      if v.is_a?(Array)
-        raise_error "Too large short_binary: #{v.size} (#{v.class.name})" unless v.size < 0xFF
-        write_int8(v.size, out)
-        v.each do |x|
-          write_int8(x, out)
-        end
-      elsif v.is_a?(String)
-        raise_error "To large short_binary: #{v.size} (#{v.class.name})" unless v.size < 0xFF
-        write_int8(v.size, out)
-        out << v.bytes.to_a
       else 
         raise_error "Unsupported binary 'nil'" if v == nil
         raise_error "Unsupported binary of type '#{v.class.name}'"
@@ -272,7 +251,10 @@ module Divine
     def write_ipv4_number(v,out)
       if v.is_a?(Array)
         raise_error "Unknown IP v4 number #{v}" unless v.size == 0 || v.size == 4 # Only IPv4 for now 
-        write_short_binary(v, out)
+        write_int8(v.size, out)
+        v.each do |x|
+          write_int8(x, out)
+        end
       elsif v.is_a?(String)
         ss = v.split(/\./).map do |s|
           s.to_i
@@ -431,13 +413,12 @@ module Divine
 #  * string   --> ""
 #  * ip_number--> ""
 #  * binary   --> []
-#  * short_binary --> []
 #  * list     --> []
 #  * map      --> {}
 
     def ruby_get_empty_declaration(field)
       case field.type
-      when :list, :binary, :short_binary
+      when :list, :binary
         "[]"
       when :map
         "{}"
@@ -464,7 +445,7 @@ module Divine
         when :list
           nv = get_fresh_variable_name
           return [
-                  "write_int32(#{var}.size, out)",
+                  "write_dint63(#{var}.size, out)",
                   "#{var}.each do |#{nv}|",
                   :indent,
                   ruby_serialize_internal(nv, types[1]),
@@ -475,7 +456,7 @@ module Divine
           nv1 = get_fresh_variable_name      
           nv2 = get_fresh_variable_name
           return [
-                  "write_int32(#{var}.size, out)",
+                  "write_dint63(#{var}.size, out)",
                   "#{var}.each_pair do |#{nv1}, #{nv2}|",
                   :indent,
                   ruby_serialize_internal(nv1, types[1]),
@@ -513,7 +494,7 @@ module Divine
           nv = get_fresh_variable_name
           return [
                   "#{var} = []",
-                  "#{count} = read_int32(data)",
+                  "#{count} = read_dint63(data)",
                   "(1..#{count}).each do",
                   :indent,
                   ruby_deserialize_internal(nv, types[1]),
@@ -526,7 +507,7 @@ module Divine
           nv1 = get_fresh_variable_name      
           nv2 = get_fresh_variable_name
           return ["#{var} = {}",
-                  "#{count} = read_int32(data)",
+                  "#{count} = read_dint63(data)",
                   "(1..#{count}).each do",
                   :indent,
                   ruby_deserialize_internal(nv1, types[1]),

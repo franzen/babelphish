@@ -3,6 +3,7 @@ require 'divine'
 
 struct 'Node' do
   int32 :i32
+  bool  :b
   list  :next_node, :Node  # List of nodes with size equals to 2, just to refer to the next left and right nodes in the tree
 end
 

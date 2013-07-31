@@ -35,3 +35,4 @@ bin.babel
 bin.babel.csharp
 bin.babel.rb
 bin.babel.js
+.project
