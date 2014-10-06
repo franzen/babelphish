@@ -131,12 +131,6 @@ module Divine
   end
 
   #
-  # Encapsulation for short binary data type
-  #
-  class ShortBinaryDefinition < SimpleDefinition # Shorted than 256 bytes
-  end
-
-  #
   # Encapsulation for string data type
   #
   class StringDefinition < SimpleDefinition
@@ -193,7 +187,6 @@ module Divine
     int16: Integer16Definition,
     int8: Integer8Definition,
     binary: BinaryDefinition,
-    short_binary: ShortBinaryDefinition,
     string: StringDefinition,
     bool: BooleanDefinition,
     list: ListDefinition,

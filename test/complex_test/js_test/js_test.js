@@ -46,11 +46,7 @@ function compare(obj1, obj2){
 
 function serialize(obj){
   var bBuffer = new Buffer(obj);
-  fs.writeFileSync(__dirname +  '/bin.babel.js', bBuffer, function (err) {
-    if (err) {
-      return console.log(err);
-    }
-  });
+  fs.writeFileSync(__dirname +  '/bin.babel.js', bBuffer);
 }
 
 function deserialize(){

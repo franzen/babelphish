@@ -150,16 +150,16 @@ DivineHelper.prototype.read_dint63 = function (data) {
     return val;
 }
 
-DivineHelper.prototype.read_binary = function (data) {
-    return data.read(this.read_int32(data));
-};
+DivineHelper.prototype.read_bool = function (data) {
+    return this.read_int8(data) == 1;
+}
 
-DivineHelper.prototype.read_short_binary = function (data) {
-    return data.read(this.read_int8(data));
+DivineHelper.prototype.read_binary = function (data) {
+    return data.read(this.read_dint63(data));
 };
 
 DivineHelper.prototype.read_ip_number = function (data) {
-    var ip_array = this.read_short_binary(data);
+    var ip_array = data.read(this.read_int8(data));
     if(ip_array.length == 4){
        return this.read_ipv4_number(ip_array);
     }else{
@@ -194,7 +194,7 @@ DivineHelper.prototype.read_ipv6_number = function (ip_array) {
 };
 
 DivineHelper.prototype.read_string = function (data) {
-    return this.decode_utf8(data.read(this.read_int16(data)))
+    return this.decode_utf8(data.read(this.read_dint63(data)))
 };
 
 DivineHelper.prototype.write_int8 = function (v, out) {
@@ -290,18 +290,18 @@ DivineHelper.prototype.write_bool = function (v, out) {
 DivineHelper.prototype.write_string = function (v, out) {
     var s = this.encode_utf8(v);
     if (s.length > 0xFFFF) this.raise_error("Too large string: " + s.length + " bytes");
-    this.write_int16(s.length, out);
+    this.write_dint63(s.length, out);
     out.write(s);
 }
 
 DivineHelper.prototype.write_binary = function (v, out) {
     if ((v instanceof Array) || (v instanceof Uint8Array)) {
         if (v.length > 0xFFFFFFFF) this.raise_error("Too large binary: " + v.length + " (" + v.constructor.name + ")");
-        this.write_int32(v.length, out)
+        this.write_dint63(v.length, out)
         out.write(v);
     } else if (v.constructor == String) {
         if (v.length > 0xFFFFFFFF) this.raise_error("Too large binary: " + v.length + " (" + v.constructor.name + ")");
-        this.write_int32(v.length, out)
+        this.write_dint63(v.length, out)
         out.write(v);
     } else if (v == null) {
         this.raise_error("Unsupported binary 'null'");
@@ -318,22 +318,6 @@ DivineHelper.prototype.write_16_binary = function (v, out) {
 	  this.write_int16(v[i], out);
         }
         
-    } else if (v == null) {
-        this.raise_error("Unsupported binary 'null'");
-    } else {
-        this.raise_error("Unsupported binary of type '" + v.constructor.name + "'");
-    }
-}
-
-DivineHelper.prototype.write_short_binary = function (v, out) {
-    if ((v instanceof Array) || (v instanceof Uint8Array)) {
-        if (v.length > 0xFF) this.raise_error("Too large binary: " + v.length + " (" + v.constructor.name + ")");
-        this.write_int8(v.length, out)
-        out.write(v);
-    } else if (v.constructor == String) {
-        if (v.length > 0xFF) this.raise_error("Too large binary: " + v.length + " (" + v.constructor.name + ")");
-        this.write_int8(v.length, out)
-        out.write(v);
     } else if (v == null) {
         this.raise_error("Unsupported binary 'null'");
     } else {
@@ -362,7 +346,8 @@ DivineHelper.prototype.write_ip_number = function (v, out) {
 DivineHelper.prototype.write_ipv4_number = function (v, out) {
     if ((v instanceof Array) || (v instanceof Uint8Array)) {
         if (v.length != 4 && v.length != 0) this.raise_error("Unknown IP v4 number " + v);
-        this.write_short_binary(v, out)
+        this.write_int8(v.length, out)
+        out.write(v);
     } else if (v.constructor == String) {
         var ss = [];
         if (v.length > 0) {
@@ -615,13 +600,12 @@ EOS
 #  * string   --> ""
 #  * ip_number--> ""
 #  * binary   --> []
-#  * short_binary --> []
 #  * list     --> []
 #  * map      --> {}
 
     def javascript_get_empty_declaration(field)
       case field.type
-      when :list, :binary, :short_binary
+      when :list, :binary
         "[]"
       when :map
         "{}"
@@ -629,6 +613,8 @@ EOS
         "0"
       when :string, :ip_number
         "\"\""
+      when :bool
+        false
       else
         raise "Unkown field type #{field.type}"
       end
@@ -647,7 +633,7 @@ EOS
           nv = get_fresh_variable_name
           idx = get_fresh_variable_name
           return [
-                  "this.write_int32(#{var}.length, out);",
+                  "this.write_dint63(#{var}.length, out);",
                   "for(var #{idx}=0; #{idx}<#{var}.length; #{idx}++) {",
                   :indent,
                   "var #{nv} = #{var}[#{idx}];",
@@ -662,7 +648,7 @@ EOS
           key = get_fresh_variable_name
           return [
                   "var #{len} = Object.keys(#{var}).length;",
-                  "this.write_int32(#{len}, out);",
+                  "this.write_dint63(#{len}, out);",
                   "for(var #{nv1} in #{var}) {",
                   :indent,
                   "var #{nv2} = #{var}[#{nv1}];",
@@ -702,7 +688,7 @@ EOS
           iter = get_fresh_variable_name
           return [
                   "#{"var " unless var.include? "this."}#{var} = [];",
-                  "var #{count} = this.read_int32(data);",
+                  "var #{count} = this.read_dint63(data);",
                   "for(var #{iter}=0; #{iter}<#{count}; #{iter}++) {",
                   :indent,
                   javascript_deserialize_internal(nv, types[1]),
@@ -716,7 +702,7 @@ EOS
           nv2 = get_fresh_variable_name
           iter = get_fresh_variable_name
           return ["#{"var " unless var.include? "this."}#{var} = {};",
-                  "var #{count} = this.read_int32(data);",
+                  "var #{count} = this.read_dint63(data);",
                   "for(var #{iter}=0; #{iter}<#{count}; #{iter}++) {",
                   :indent,
                   javascript_deserialize_internal(nv1, types[1]),

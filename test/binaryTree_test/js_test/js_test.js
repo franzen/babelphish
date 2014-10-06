@@ -15,24 +15,31 @@ compareBinaryTree(binaryTree_ser, binaryTree_deser);
 function buildTree(){
     var root = new Node();
     root.i32 = 0;
+    root.b = false;
     
     var n1_L = new Node();
     n1_L.i32 = 1;
+    n1_L.b = true;
 
     var n1_R = new Node();
     n1_R.i32 = 2;
+    n1_R.b = false;
 
     var n2_L_L = new Node();
     n2_L_L.i32 = 3;
+    n2_L_L.b = true;
 
     var n2_L_R = new Node();
     n2_L_R.i32 = 4;
+    n2_L_R.b = false;
 
     var n2_R_L = new Node();
     n2_R_L.i32 = 5;
+    n2_R_L.b = true;
 
     var n2_R_R = new Node();
     n2_R_R.i32 = 6;
+    n2_R_R.b = false;
 
     root.next_node = [n1_L, n1_R];
     n1_L.next_node = [n2_L_L, n2_L_R];
@@ -45,6 +52,7 @@ function buildTree(){
 
 function compareBinaryTree(bt1, bt2){
   assert.equal( bt1.root_node.length, bt2.root_node.length);
+  assert.equal( bt1.root_node[0].b, bt2.root_node[0].b);
   assert.equal( bt1.root_node[0].i32, bt2.root_node[0].i32);
   assert.equal( bt1.root_node[0].next_node.length, bt2.root_node[0].next_node.length);
   assert.equal( bt1.root_node[0].next_node[0].next_node[0].i32, bt2.root_node[0].next_node[0].next_node[0].i32);
@@ -52,11 +60,7 @@ function compareBinaryTree(bt1, bt2){
 
 function serialize(obj){
   var bBuffer = new Buffer(obj);
-  fs.writeFileSync(__dirname +  '/bin.babel.js', bBuffer, function (err) {
-    if (err) {
-      return console.log(err);
-    }
-  });
+  fs.writeFileSync(__dirname +  '/bin.babel.js', bBuffer);
 }
 
 function deserialize(){

@@ -29,24 +29,31 @@ class TestBinaryTree < MiniTest::Unit::TestCase
   def buildTree()
     root = BabelTest::Node.new
     root.i32 = 0
+    root.b = false
     
     n1_L = BabelTest::Node.new
     n1_L.i32 = 1
-
+    n1_L.b = true
+    
     n1_R = BabelTest::Node.new
     n1_R.i32 = 2
+    n1_R.b = false
 
     n2_L_L = BabelTest::Node.new
     n2_L_L.i32 = 3
-
+    n2_L_L.b = true
+    
     n2_L_R = BabelTest::Node.new
     n2_L_R.i32 = 4
+    n2_L_R.b = false
 
     n2_R_L = BabelTest::Node.new
     n2_R_L.i32 = 5
+    n2_R_L.b = true
 
     n2_R_R = BabelTest::Node.new
     n2_R_R.i32 = 6
+    n2_R_R.b = false
 
     root.next_node = [n1_L, n1_R]
     n1_L.next_node = [n2_L_L, n2_L_R]
@@ -65,6 +72,7 @@ class TestBinaryTree < MiniTest::Unit::TestCase
   #
   def compare(bt1, bt2)
     assert_equal bt1.root_node.length, bt2.root_node.length
+    assert_equal bt1.root_node[0].b, bt2.root_node[0].b
     assert_equal bt1.root_node[0].i32, bt2.root_node[0].i32
     assert_equal bt1.root_node[0].next_node.length, bt2.root_node[0].next_node.length
     assert_equal bt1.root_node[0].next_node[0].next_node[0].i32, bt2.root_node[0].next_node[0].next_node[0].i32

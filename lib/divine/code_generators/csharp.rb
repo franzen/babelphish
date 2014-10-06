@@ -105,7 +105,7 @@ namespace divine
             // Force utf8
             try
             {
-                return System.Text.Encoding.UTF8.GetString(readBytes(readInt16(data), data));
+                return System.Text.Encoding.UTF8.GetString(readBytes((int)readDint63(data), data));
             }
             catch (System.IO.IOException ex)
             {
@@ -131,7 +131,7 @@ namespace divine
         {
             try
             {
-                long c = readInt32(data);
+                long c = readDint63(data);
                 if (c > int.MaxValue)
                 {
                     throw new System.IndexOutOfRangeException("Binary data to big for csharp");
@@ -144,23 +144,11 @@ namespace divine
             }
         }
 
-        protected byte[] readShortBinary(MemoryStream data)
-        {
-            try
-            {
-                return readBytes(readInt8(data), data);
-            }
-            catch (System.IO.IOException ex)
-            {
-                throw ex;
-            }
-        }
-
         protected String readIpNumber(MemoryStream data)
         {
             try
             {
-                byte[] ips = readShortBinary(data);
+                byte[] ips = readBytes(readInt8(data), data);
                 if (ips.Length == 4)
                 {
                     return readIpv4Number(ips);
@@ -313,7 +301,7 @@ namespace divine
             for (int i = matches.Count - 1; i >= 0 ; i--)
             {
                 String val = matches[i].Value;
-                val += new String(new char[7 - val.Length]).Replace("\\\\0", "0") + Math.Min(i, 1);
+                val += new String('0', (7 - val.Length)) + Math.Min(i, 1);
                 charArray = val.ToCharArray();
                 Array.Reverse(charArray);
                 String str = new String(charArray);
@@ -338,7 +326,7 @@ namespace divine
                 {
                     raiseError("Too large string: " + bs.Length + " bytes");
                 }
-                writeInt16((ushort)bs.Length, output);
+                writeDint63((long)bs.Length, output);
                 output.Write(bs, 0, bs.Length);
             }
             catch (System.IO.IOException ex)
@@ -355,7 +343,7 @@ namespace divine
                 {
                     raiseError("Too large binary: " + v.Length + " bytes");
                 }
-                writeInt32((uint)v.Length, output);
+                writeDint63((long)v.Length, output);
                 output.Write(v, 0, v.Length);
             }
             catch (System.IO.IOException ex)
@@ -377,23 +365,6 @@ namespace divine
                 {
                     this.writeInt16((ushort)v[i], output);
                 }
-            }
-            catch (System.IO.IOException ex)
-            {
-                throw ex;
-            }
-        }
-
-        protected void writeShortBinary(byte[] v, MemoryStream output)
-        {
-            try
-            {
-                if (v.Length > 0xFF)
-                {
-                    raiseError("Too large short_binary: " + v.Length + " bytes");
-                }
-                writeInt8((byte)v.Length, output);
-                output.Write(v, 0, v.Length);
             }
             catch (System.IO.IOException ex)
             {
@@ -437,7 +408,8 @@ namespace divine
                 }
                 if (ss.Length == 0 || ss.Length == 4)
                 {
-                    writeShortBinary(ss, output);
+                    writeInt8((byte)ss.Length, output);
+                    output.Write(ss, 0, ss.Length);
                 }
                 else
                 {
@@ -627,7 +599,6 @@ EOS
 #  * string   --> ""
 #  * ip_number--> ""
 #  * binary   --> new byte[0]
-#  * short_binary --> new byte[0]
 #  * list     --> new List<type>()
 #  * map      --> new Dictionary<keyType, valueType>()
 
@@ -650,12 +621,14 @@ EOS
 
       else
         case types
-        when :binary, :short_binary
+        when :binary
           "new byte[0]"
         when :int8, :int16, :int32, :sint32, :sint64, :dint63
           "0"
         when :string, :ip_number
           "\"\""
+        when :bool
+          "false"
         else
           if $all_structs[types]
             types
@@ -677,7 +650,6 @@ EOS
 #  * string   --> string
 #  * ip_number--> string
 #  * binary   --> byte[]
-#  * short_binary --> byte[]
 #  * list     --> List<type>
 #  * map      --> Dictionary<keyType, valueType>
  
@@ -703,20 +675,22 @@ EOS
 
       else
         case types
-        when :binary, :short_binary
+        when :binary
           "byte[]"
         when :int8
-	  "byte"
-	when :int16
-	  "ushort"
-	when :int32
+      	  "byte"
+      	when :int16
+      	  "ushort"
+      	when :int32
           "uint"
         when :sint32
-  	  "int"
-	when :sint64, :dint63
+      	  "int"
+      	when :sint64, :dint63
           "long"
         when :string, :ip_number
           "string"
+        when :bool
+          "bool"
         else
           if $all_structs[types]
             types
@@ -739,7 +713,7 @@ EOS
           nv = get_fresh_variable_name
           idx = get_fresh_variable_name
           return [
-                  "writeInt32((uint)#{var}.Count, baos);",
+                  "writeDint63((long)#{var}.Count, baos);",
                   "for(int #{idx}=0; #{idx}<#{var}.Count; #{idx}++) {",
                   :indent,
                   "#{csharp_get_type_declaration types[1]} #{nv} = #{var}[#{idx}];",
@@ -751,7 +725,7 @@ EOS
           nv1 = get_fresh_variable_name      
           nv2 = get_fresh_variable_name
           return [
-                  "writeInt32((uint)#{var}.Count, baos);",
+                  "writeDint63((long)#{var}.Count, baos);",
                   "foreach (#{csharp_get_type_declaration types[1]} #{nv1} in #{var}.Keys) {",
                   :indent,
                   "#{csharp_get_type_declaration types[2]} #{nv2} = #{var}[#{nv1}];",
@@ -791,7 +765,7 @@ EOS
           iter = get_fresh_variable_name
           return [
                   "#{"#{csharp_get_type_declaration(types)} " unless var.include? "this."}#{var} = #{csharp_get_empty_declaration(types)};",
-                  "uint #{count} = this.readInt32(bais);",
+                  "uint #{count} = (uint)this.readDint63(bais);",
                   "for(int #{iter}=0; #{iter}<#{count}; #{iter}++) {",
                   :indent,
                   csharp_deserialize_internal(nv, types[1]),
@@ -805,7 +779,7 @@ EOS
           nv2 = get_fresh_variable_name
           iter = get_fresh_variable_name
           return ["#{"#{csharp_get_type_declaration(types)} " unless var.include? "this."}#{var} = #{csharp_get_empty_declaration(types)};",
-                  "uint #{count} = readInt32(bais);",
+                  "uint #{count} = (uint)readDint63(bais);",
                   "for(int #{iter}=0; #{iter}<#{count}; #{iter}++) {",
                   :indent,
                   csharp_deserialize_internal(nv1, types[1]),
