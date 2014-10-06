@@ -17,7 +17,7 @@ Gem::Specification.new do |gem|
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.require_paths = ["lib"]
   
-  gem.add_dependency(%q<docile>, [">= 1.0.0"])
+  gem.add_dependency(%q<docile>, [">= 1.1.0"])
   gem.add_dependency(%q<erubis>, [">= 2.7.0"])
-  gem.add_dependency(%q<ruby-graphviz>, [">= 1.0.8"])
+  gem.add_dependency(%q<ruby-graphviz>, [">= 1.2.0"])
 end

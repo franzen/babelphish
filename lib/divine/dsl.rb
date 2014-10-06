@@ -268,7 +268,49 @@ module Divine
       return nil
     end
 
-    def method_missing(m, *args, &block)
+    def list(*args, &block)
+      _process(:list, *args, &block)
+    end
+
+    def map(*args, &block)
+      _process(:map, *args, &block)
+    end
+    def dint63(*args, &block)
+      _process(:dint63, *args, &block)
+    end
+    def sint64(*args, &block)
+      _process(:sint64, *args, &block)
+    end
+    def sint32(*args, &block)
+      _process(:sint32, *args, &block)
+    end
+    def int32(*args, &block)
+      _process(:int32, *args, &block)
+    end
+    def int24(*args, &block)
+      _process(:int24, *args, &block)
+    end
+    def int16(*args, &block)
+      _process(:int16, *args, &block)
+    end
+    def int8(*args, &block)
+      _process(:int8, *args, &block)
+    end
+    def binary(*args, &block)
+      _process(:binary, *args, &block)
+    end
+    def string(*args, &block)
+      _process(:string, *args, &block)
+    end
+    def bool(*args, &block)
+      _process(:bool, *args, &block)
+    end
+    def ip_number(*args, &block)
+      _process(:ip_number, *args, &block)
+    end
+
+
+    def _process(m, *args, &block)
       #puts "... #{m} #{args.inspect}"
       type = $available_types[m]
       if type
@@ -288,6 +330,10 @@ module Divine
       else
         super.send(m, args, block)
       end
+    end
+
+    def method_missing(m, *args, &block)
+      _process(m, *args, &block)
     end
   end
 end
