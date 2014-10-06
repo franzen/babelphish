@@ -87,10 +87,6 @@ We support C#, Java, Ruby and Javascript at the moment.
 		<td>Write a byte array of max 4,294,967,295 bytes</td>
 	</tr>
 	<tr>
-		<td>short_binary</td>
-		<td>Write a byte array of max 255 bytes</td>
-	</tr>
-	<tr>
 		<td>string</td>
 		<td>A UTF-8 based string of max 65,535 bytes (and one UTF8 char is represented by between 1 to 4 bytes)</td>
 	</tr>
@@ -446,6 +442,12 @@ Javascript does only support numbers in the range of -9,007,199,254,740,992 to 9
 
 
 ## Change log
+Version 0.0.5
+
+* Adapted to docile 1.1.5
+* Removed short_binary
+
+
 Version 0.0.4
 
 * Added dint63 (Dynamic Int 63)
@@ -454,7 +456,7 @@ Version 0.0.4
 Version 0.0.3
 
 * Added C# code generator
-* Added sint64 and sint64 (Signed Int 32 and 64)
+* Added sint32 and sint64 (Signed Int 32 and 64)
 * Added versioning and freezing
 
 
