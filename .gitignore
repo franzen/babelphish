@@ -31,7 +31,11 @@ test/binaryTree_test/js_test/test_binaryTree.js
 test/complex_test/js_test/test_complex.js
 test/ipv6_test/js_test/test_ipv6.js
 test/signed_int_test/js_test/test_signed_int.js
-bin.babel
+test/binaryTree_test/csharp_test/test_binaryTree.cs
+test/complex_test/csharp_test/test_complex.cs
+test/dynamic_int_test/csharp_test/test_dynamic_int.cs
+test/ipv6_test/csharp_test/test_ipv6.cs
+test/signed_int_test/csharp_test/test_signed_int.csbin.babel
 bin.babel.csharp
 bin.babel.rb
 bin.babel.js
